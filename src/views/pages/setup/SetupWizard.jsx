@@ -80,12 +80,16 @@ export default function SetupWizard() {
       const pvNom = res.pointDeVenteNom || payload.nomPv;
 
       dmUser.onboardingCompleted = true;
+      if (!dmUser.role) {
+        dmUser.role = "CLIENT_BAR";
+      }
       if (pvId) {
         dmUser.point_de_vente_actif_id = pvId;
         dmUser.pointDeVenteActifId = pvId;
         localStorage.setItem("activePV", JSON.stringify({ id: pvId, nom: pvNom, code: payload.codePv, adresse: payload.adressePv }));
       }
       localStorage.setItem("dmUser", JSON.stringify(dmUser));
+      localStorage.setItem("role", dmUser.role);
       localStorage.setItem("activityType", etablissement);
 
       setTimeout(() => {
