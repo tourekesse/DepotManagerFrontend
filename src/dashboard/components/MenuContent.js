@@ -29,7 +29,8 @@ export default function MenuContent() {
   React.useEffect(() => {
     const roleMenu = getMenuForCurrentRole();
     setMenuItems(roleMenu);
-    const role = localStorage.getItem('role') || (JSON.parse(localStorage.getItem('dmUser') || '{}').role);
+    const dmUserRole = (JSON.parse(localStorage.getItem('dmUser') || '{}').role);
+    const role = dmUserRole || localStorage.getItem('role');
     if (role) {
       fetchMenu(role).then((apiMenu) => {
         if (apiMenu && apiMenu.length) setMenuItems(apiMenu);
