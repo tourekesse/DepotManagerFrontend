@@ -20,7 +20,6 @@ import {
   getDrawerSxTransitionMixin,
   getDrawerWidthTransitionMixin,
 } from '../mixins';
-import { getMenuForCurrentRole } from '../../config/roleConfig';
 import { fetchMenu } from '../../api/menuApi';
 
 type MenuItem = {
@@ -46,7 +45,7 @@ export default function DashboardSidebar({
   const { pathname } = useLocation();
 
   const [expandedItemIds, setExpandedItemIds] = React.useState<string[]>([]);
-  const [menuItems, setMenuItems] = React.useState<MenuItem[]>(getMenuForCurrentRole());
+  const [menuItems, setMenuItems] = React.useState<MenuItem[]>([]);
 
   const isOverSmViewport = useMediaQuery(theme.breakpoints.up('sm'));
   const isOverMdViewport = useMediaQuery(theme.breakpoints.up('md'));
@@ -71,17 +70,14 @@ export default function DashboardSidebar({
   }, [expanded, theme.transitions.duration.leavingScreen]);
 
   React.useEffect(() => {
-    const roleMenu = getMenuForCurrentRole();
-    setMenuItems(roleMenu);
-    const dmUserRole = (JSON.parse(localStorage.getItem('dmUser') || '{}').role);
-    const role = dmUserRole || localStorage.getItem('role');
-    if (role) {
-      fetchMenu(role)
-        .then((apiMenu) => {
-          if (apiMenu && apiMenu.length) setMenuItems(apiMenu);
-        })
-        .catch(() => {});
-    }
+    const dmUser = JSON.parse(localStorage.getItem('dmUser') || '{}');
+    const role = dmUser.role || localStorage.getItem('role');
+    const userId = dmUser.userId;
+    fetchMenu(role, userId)
+      .then((apiMenu) => {
+        if (apiMenu && apiMenu.length) setMenuItems(apiMenu);
+      })
+      .catch(() => {});
   }, []);
 
   const mini = !disableCollapsibleSidebar && !expanded;

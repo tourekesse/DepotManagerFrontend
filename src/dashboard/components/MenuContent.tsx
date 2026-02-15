@@ -18,25 +18,23 @@ import AddIcon from '@mui/icons-material/Add';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import HistoryIcon from '@mui/icons-material/History';
 import { fetchMenu } from '../../api/menuApi';
-import { getMenuForCurrentRole } from '../../config/roleConfig';
 import { useNavigate } from 'react-router-dom';
 
 type MenuItem = { label: string; path: string; icon?: string };
 
 export default function MenuContent() {
   const navigate = useNavigate();
-  const [menuItems, setMenuItems] = React.useState<MenuItem[]>(getMenuForCurrentRole());
+  const [menuItems, setMenuItems] = React.useState<MenuItem[]>([]);
 
   React.useEffect(() => {
-    const roleMenu = getMenuForCurrentRole();
-    setMenuItems(roleMenu);
-    const dmUserRole = (JSON.parse(localStorage.getItem('dmUser') || '{}').role);
-    const role = dmUserRole || localStorage.getItem('role');
-    if (role) {
-      fetchMenu(role).then((apiMenu) => {
+    const dmUser = JSON.parse(localStorage.getItem('dmUser') || '{}');
+    const role = dmUser.role || localStorage.getItem('role');
+    const userId = dmUser.userId;
+    fetchMenu(role, userId)
+      .then((apiMenu) => {
         if (apiMenu && apiMenu.length) setMenuItems(apiMenu);
-      }).catch(() => {});
-    }
+      })
+      .catch(() => {});
   }, []);
 
   const getIcon = (iconName?: string) => {

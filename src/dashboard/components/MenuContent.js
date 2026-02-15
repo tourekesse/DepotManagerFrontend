@@ -18,24 +18,22 @@ import AddIcon from '@mui/icons-material/Add';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import { getMenuForCurrentRole } from '../../config/roleConfig.js';
 import { fetchMenu } from '../../api/menuApi';
 import { useNavigate } from 'react-router-dom';
 
 export default function MenuContent() {
   const navigate = useNavigate();
-  const [menuItems, setMenuItems] = React.useState(getMenuForCurrentRole());
+  const [menuItems, setMenuItems] = React.useState([]);
 
   React.useEffect(() => {
-    const roleMenu = getMenuForCurrentRole();
-    setMenuItems(roleMenu);
-    const dmUserRole = (JSON.parse(localStorage.getItem('dmUser') || '{}').role);
-    const role = dmUserRole || localStorage.getItem('role');
-    if (role) {
-      fetchMenu(role).then((apiMenu) => {
+    const dmUser = JSON.parse(localStorage.getItem('dmUser') || '{}');
+    const role = dmUser.role || localStorage.getItem('role');
+    const userId = dmUser.userId;
+    fetchMenu(role, userId)
+      .then((apiMenu) => {
         if (apiMenu && apiMenu.length) setMenuItems(apiMenu);
-      }).catch(() => {});
-    }
+      })
+      .catch(() => {});
   }, []);
 
   const getIcon = (iconName) => {
