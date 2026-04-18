@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-04-18T05:41:06.514Z",
+  "build": {
+    "totalSize": 0,
+    "js": {
+      "files": 0,
+      "totalSize": 0,
+      "gzipped": 0,
+      "brotlified": 0
+    },
+    "css": {
+      "files": 0,
+      "totalSize": 0,
+      "gzipped": 0,
+      "brotlified": 0
+    },
+    "images": {
+      "files": 0,
+      "totalSize": 0,
+      "webpCount": 0
+    }
+  }
+}

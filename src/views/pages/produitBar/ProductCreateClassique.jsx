@@ -1,0 +1,93 @@
+import * as React from "react";
+import { useNavigate } from "react-router-dom";
+import PageContainer from "../../../crud-dashboard/components/PageContainer";
+import useNotifications from "../../../crud-dashboard/hooks/useNotifications/useNotifications";
+import { createProduit } from "../../../api/produitsApi";
+import ProductForm from "./form/ProductForm";
+
+// mêmes valeurs que le backend
+const INITIAL_VALUES = {
+  designation: "",
+  marque: "",
+  format: "",
+  groupeLiquide: "",
+  nbreBouteillesParCasier: 12,
+  prixAchatHt: 0,
+  prixVenteHt: 0,
+  consigneBouteille: 0,
+  consigneCasier: 0,
+  coutCasierNeuf: 0,
+  stockInitial: 0,
+  stockMinimum: 0,
+};
+
+export default function ProductCreateClassique() {
+  const navigate = useNavigate();
+  const notifications = useNotifications();
+
+  const [values, setValues] = React.useState(INITIAL_VALUES);
+  const [errors, setErrors] = React.useState({});
+  const [loading, setLoading] = React.useState(false);
+
+  const handleChange = (e) => {
+    const { name, value, type } = e.target;
+    setValues((prev) => ({
+      ...prev,
+      [name]: type === "number" ? Number(value) : value,
+    }));
+    setErrors((prev) => ({ ...prev, [name]: null }));
+  };
+
+  const validate = () => {
+    const required = [
+      "designation",
+      "groupeLiquide",
+      "prixVenteHt",
+      "stockInitial",
+      "nbreBouteillesParCasier",
+    ];
+
+    const newErrors = {};
+    required.forEach((f) => {
+      if (values[f] === "" || values[f] === null) {
+        newErrors[f] = "Champ obligatoire";
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      await createProduit(values);
+      notifications.show("Produit créé avec succès", {
+        severity: "success",
+        autoHideDuration: 3000,
+      });
+      navigate("/accueil/produits");
+    } catch (e) {
+      notifications.show(
+        e.response?.data?.message || "Erreur lors de la création",
+        { severity: "error" }
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <ProductForm
+      values={values}
+      errors={errors}
+      onChange={handleChange}
+      onSubmit={handleSubmit}
+      onCancel={() => navigate("/accueil/produits")}
+      submitLabel="Créer le produit"
+      loading={loading}
+    />
+  );
+}

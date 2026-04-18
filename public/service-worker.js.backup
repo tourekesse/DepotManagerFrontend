@@ -1,0 +1,128 @@
+const CACHE_NAME = 'depotmanager-cache-v3';
+const OFFLINE_URL = '/index.html';
+
+// Ressources de base à précacher (shell)
+const PRECACHE_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/vite.svg',
+  '/assets/index-BfWDx_HQ.css',
+  '/assets/index-DLCrH7wc.js',
+];
+
+// Patterns de bundles à précacher (ajout manuel pour Vite)
+const BUNDLE_PATTERNS = [
+  '/assets/',
+];
+
+// Types de ressources à mettre en cache à la volée (runtime)
+const STATIC_DESTINATIONS = ['style', 'script', 'font', 'image'];
+const STATIC_EXTENSIONS = /\.(?:js|css|woff2?|ttf|eot|png|jpe?g|svg|ico|webp)$/i;
+const API_CACHE_NAME = 'depotmanager-api-cache-v1';
+const API_CACHE_PATTERNS = [
+  '/api/',
+];
+const API_CACHE_EXCLUDE = [
+  '/api/auth',
+  '/api/login',
+  '/api/register',
+  '/api/otp',
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(async cache => {
+      await cache.addAll(PRECACHE_ASSETS);
+      // Tentative de précache des bundles connus (paths génériques)
+      try {
+        // On ne connaît pas les noms de fichiers Vite à l'avance; ici, on peut ajouter des patterns
+        // à adapter si tu as la liste exacte après build.
+        // Exemple : cache.add('/assets/index-xxxx.js'), etc. via un manifest pré-généré.
+      } catch (_e) {}
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', event => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+
+  // Stratégie pour les navigations : network-first, fallback cache/offline
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(OFFLINE_URL, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(request).then(cached => cached || caches.match(OFFLINE_URL))
+        )
+    );
+    return;
+  }
+
+  // Cache runtime pour les assets statiques same-origin
+  const shouldCacheStatic =
+    isSameOrigin &&
+    (STATIC_DESTINATIONS.includes(request.destination) ||
+      STATIC_EXTENSIONS.test(url.pathname));
+
+  if (!shouldCacheStatic) {
+    // Gestion des GET API (produits/clients) en cache network-first
+    const isApiGet =
+      request.method === 'GET' &&
+      isSameOrigin &&
+      API_CACHE_PATTERNS.some((p) => url.pathname.startsWith(p)) &&
+      !API_CACHE_EXCLUDE.some((p) => url.pathname.startsWith(p));
+
+    if (isApiGet) {
+      event.respondWith(
+        fetch(request)
+          .then(response => {
+            if (response && response.status === 200) {
+              const clone = response.clone();
+              caches.open(API_CACHE_NAME).then(cache => cache.put(request, clone));
+            }
+            return response;
+          })
+          .catch(() =>
+            caches.match(request).then(cached => cached || caches.match(OFFLINE_URL))
+          )
+      );
+    }
+    return; // laisser passer les autres API, POST, ou non statiques
+  }
+
+  event.respondWith(
+    caches.match(request).then(cached => {
+      const fetchPromise = fetch(request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => cached || caches.match(OFFLINE_URL));
+      return cached || fetchPromise;
+    })
+  );
+});

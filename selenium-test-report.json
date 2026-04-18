@@ -1,0 +1,59 @@
+{
+  "timestamp": "2026-02-28T02:12:14.944Z",
+  "results": {
+    "login": {
+      "status": "failed",
+      "time": 3056,
+      "errors": [
+        "invalid selector: An invalid or illegal selector was specified\n  (Session info: chrome=144.0.7559.109)"
+      ]
+    },
+    "navigation": {
+      "status": "failed",
+      "time": 59,
+      "errors": [
+        "Lien vers les ventes non trouvé"
+      ]
+    },
+    "clientSearch": {
+      "status": "failed",
+      "time": 60,
+      "errors": [
+        "Champ de recherche client non trouvé"
+      ]
+    },
+    "productAdd": {
+      "status": "failed",
+      "time": 61,
+      "errors": [
+        "Aucun produit trouvé sur la page"
+      ]
+    },
+    "saleValidation": {
+      "status": "failed",
+      "time": 110,
+      "errors": [
+        "invalid selector: An invalid or illegal selector was specified\n  (Session info: chrome=144.0.7559.109)"
+      ]
+    },
+    "pwaCheck": {
+      "status": "success",
+      "time": 344,
+      "errors": []
+    }
+  },
+  "improvements": [
+    {
+      "type": "PWA",
+      "priority": "medium",
+      "issue": "Application non installable",
+      "suggestion": "Ajouter les critères d'installabilité PWA"
+    }
+  ],
+  "summary": {
+    "totalTests": 6,
+    "successfulTests": 1,
+    "failedTests": 5,
+    "successRate": 17
+  }
+}

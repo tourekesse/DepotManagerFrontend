@@ -1,0 +1,643 @@
+{
+  "timestamp": "2026-02-27T23:53:48.094Z",
+  "stats": {
+    "bundles": {
+      "count": 23,
+      "totalSize": 1937680,
+      "totalGzipped": 560353,
+      "totalBrotli": 459729,
+      "compressionRatio": "71.1"
+    },
+    "assets": {
+      "count": 90,
+      "totalSize": 11950185
+    },
+    "overall": {
+      "totalSize": 13887865,
+      "totalGzipped": 12510538,
+      "totalBrotli": 12409914
+    }
+  },
+  "bundles": [
+    {
+      "name": "index-klH-3OZ6.js",
+      "path": "build/static/js/index-klH-3OZ6.js",
+      "size": 1356902,
+      "gzipped": 377663,
+      "brotli": 306841
+    },
+    {
+      "name": "mui-Cfc9YdNL.js",
+      "path": "build/static/js/mui-Cfc9YdNL.js",
+      "size": 455557,
+      "gzipped": 132916,
+      "brotli": 108849
+    },
+    {
+      "name": "router-CIKBgebH.js",
+      "path": "build/static/js/router-CIKBgebH.js",
+      "size": 37362,
+      "gzipped": 13259,
+      "brotli": 11850
+    },
+    {
+      "name": "vendor-DekTAH87.js",
+      "path": "build/static/js/vendor-DekTAH87.js",
+      "size": 11148,
+      "gzipped": 3946,
+      "brotli": 3519
+    },
+    {
+      "name": "SetupWizard-OPyt5Y0E.js",
+      "path": "build/static/js/SetupWizard-OPyt5Y0E.js",
+      "size": 10153,
+      "gzipped": 3791,
+      "brotli": 3335
+    },
+    {
+      "name": "CommandeClient-DBASlmg2.js",
+      "path": "build/static/js/CommandeClient-DBASlmg2.js",
+      "size": 8709,
+      "gzipped": 3474,
+      "brotli": 3117
+    },
+    {
+      "name": "cil-magnifying-glass-B2_HtY5D.js",
+      "path": "build/static/js/cil-magnifying-glass-B2_HtY5D.js",
+      "size": 8089,
+      "gzipped": 3067,
+      "brotli": 2706
+    },
+    {
+      "name": "LoginPage-C-fQq3Gg.js",
+      "path": "build/static/js/LoginPage-C-fQq3Gg.js",
+      "size": 6115,
+      "gzipped": 2689,
+      "brotli": 2351
+    },
+    {
+      "name": "ActivationPage-rcphNrDD.js",
+      "path": "build/static/js/ActivationPage-rcphNrDD.js",
+      "size": 5900,
+      "gzipped": 2347,
+      "brotli": 2083
+    },
+    {
+      "name": "EspaceClient-CIFhxB6q.js",
+      "path": "build/static/js/EspaceClient-CIFhxB6q.js",
+      "size": 5825,
+      "gzipped": 2376,
+      "brotli": 2101
+    },
+    {
+      "name": "LoginClientMobile-DNbXoFDC.js",
+      "path": "build/static/js/LoginClientMobile-DNbXoFDC.js",
+      "size": 5210,
+      "gzipped": 2360,
+      "brotli": 2087
+    },
+    {
+      "name": "TrialRegisterPage-CR2jPCB_.js",
+      "path": "build/static/js/TrialRegisterPage-CR2jPCB_.js",
+      "size": 4363,
+      "gzipped": 1982,
+      "brotli": 1743
+    },
+    {
+      "name": "HomePage-AW0bB4A1.js",
+      "path": "build/static/js/HomePage-AW0bB4A1.js",
+      "size": 4211,
+      "gzipped": 1861,
+      "brotli": 1621
+    },
+    {
+      "name": "CFormInput-CHNXdz7z.js",
+      "path": "build/static/js/CFormInput-CHNXdz7z.js",
+      "size": 4128,
+      "gzipped": 1262,
+      "brotli": 1130
+    },
+    {
+      "name": "CButton-CwV_susj.js",
+      "path": "build/static/js/CButton-CwV_susj.js",
+      "size": 3065,
+      "gzipped": 1317,
+      "brotli": 1145
+    },
+    {
+      "name": "ResendActivation-CdRWOUx5.js",
+      "path": "build/static/js/ResendActivation-CdRWOUx5.js",
+      "size": 2400,
+      "gzipped": 1314,
+      "brotli": 1152
+    },
+    {
+      "name": "Register-Dwt5nHS6.js",
+      "path": "build/static/js/Register-Dwt5nHS6.js",
+      "size": 1615,
+      "gzipped": 712,
+      "brotli": 602
+    },
+    {
+      "name": "ActivationError-BF9745mB.js",
+      "path": "build/static/js/ActivationError-BF9745mB.js",
+      "size": 1415,
+      "gzipped": 816,
+      "brotli": 721
+    },
+    {
+      "name": "ActivationSuccess-D2rTstA6.js",
+      "path": "build/static/js/ActivationSuccess-D2rTstA6.js",
+      "size": 1260,
+      "gzipped": 764,
+      "brotli": 670
+    },
+    {
+      "name": "Page500-YdPIZVeG.js",
+      "path": "build/static/js/Page500-YdPIZVeG.js",
+      "size": 1209,
+      "gzipped": 683,
+      "brotli": 582
+    },
+    {
+      "name": "Page404-BfFBeEY8.js",
+      "path": "build/static/js/Page404-BfFBeEY8.js",
+      "size": 1195,
+      "gzipped": 669,
+      "brotli": 578
+    },
+    {
+      "name": "RegisterSuccessPage-BIYGrV3v.js",
+      "path": "build/static/js/RegisterSuccessPage-BIYGrV3v.js",
+      "size": 1063,
+      "gzipped": 701,
+      "brotli": 628
+    },
+    {
+      "name": "CCardBody-DMG9Tz6h.js",
+      "path": "build/static/js/CCardBody-DMG9Tz6h.js",
+      "size": 786,
+      "gzipped": 384,
+      "brotli": 318
+    }
+  ],
+  "assets": [
+    {
+      "name": "js/ActivationError-BF9745mB.js",
+      "path": "build/static/js/ActivationError-BF9745mB.js",
+      "size": 1415
+    },
+    {
+      "name": "js/ActivationError-BF9745mB.js.br",
+      "path": "build/static/js/ActivationError-BF9745mB.js.br",
+      "size": 721
+    },
+    {
+      "name": "js/ActivationError-BF9745mB.js.gz",
+      "path": "build/static/js/ActivationError-BF9745mB.js.gz",
+      "size": 816
+    },
+    {
+      "name": "js/ActivationError-BF9745mB.js.map",
+      "path": "build/static/js/ActivationError-BF9745mB.js.map",
+      "size": 3484
+    },
+    {
+      "name": "js/ActivationPage-rcphNrDD.js",
+      "path": "build/static/js/ActivationPage-rcphNrDD.js",
+      "size": 5900
+    },
+    {
+      "name": "js/ActivationPage-rcphNrDD.js.br",
+      "path": "build/static/js/ActivationPage-rcphNrDD.js.br",
+      "size": 2083
+    },
+    {
+      "name": "js/ActivationPage-rcphNrDD.js.gz",
+      "path": "build/static/js/ActivationPage-rcphNrDD.js.gz",
+      "size": 2347
+    },
+    {
+      "name": "js/ActivationPage-rcphNrDD.js.map",
+      "path": "build/static/js/ActivationPage-rcphNrDD.js.map",
+      "size": 19960
+    },
+    {
+      "name": "js/ActivationSuccess-D2rTstA6.js",
+      "path": "build/static/js/ActivationSuccess-D2rTstA6.js",
+      "size": 1260
+    },
+    {
+      "name": "js/ActivationSuccess-D2rTstA6.js.br",
+      "path": "build/static/js/ActivationSuccess-D2rTstA6.js.br",
+      "size": 670
+    },
+    {
+      "name": "js/ActivationSuccess-D2rTstA6.js.gz",
+      "path": "build/static/js/ActivationSuccess-D2rTstA6.js.gz",
+      "size": 764
+    },
+    {
+      "name": "js/ActivationSuccess-D2rTstA6.js.map",
+      "path": "build/static/js/ActivationSuccess-D2rTstA6.js.map",
+      "size": 3804
+    },
+    {
+      "name": "js/CButton-CwV_susj.js",
+      "path": "build/static/js/CButton-CwV_susj.js",
+      "size": 3065
+    },
+    {
+      "name": "js/CButton-CwV_susj.js.br",
+      "path": "build/static/js/CButton-CwV_susj.js.br",
+      "size": 1145
+    },
+    {
+      "name": "js/CButton-CwV_susj.js.gz",
+      "path": "build/static/js/CButton-CwV_susj.js.gz",
+      "size": 1317
+    },
+    {
+      "name": "js/CButton-CwV_susj.js.map",
+      "path": "build/static/js/CButton-CwV_susj.js.map",
+      "size": 14258
+    },
+    {
+      "name": "js/CCardBody-DMG9Tz6h.js",
+      "path": "build/static/js/CCardBody-DMG9Tz6h.js",
+      "size": 786
+    },
+    {
+      "name": "js/CCardBody-DMG9Tz6h.js.map",
+      "path": "build/static/js/CCardBody-DMG9Tz6h.js.map",
+      "size": 2924
+    },
+    {
+      "name": "js/CFormInput-CHNXdz7z.js",
+      "path": "build/static/js/CFormInput-CHNXdz7z.js",
+      "size": 4128
+    },
+    {
+      "name": "js/CFormInput-CHNXdz7z.js.br",
+      "path": "build/static/js/CFormInput-CHNXdz7z.js.br",
+      "size": 1130
+    },
+    {
+      "name": "js/CFormInput-CHNXdz7z.js.gz",
+      "path": "build/static/js/CFormInput-CHNXdz7z.js.gz",
+      "size": 1262
+    },
+    {
+      "name": "js/CFormInput-CHNXdz7z.js.map",
+      "path": "build/static/js/CFormInput-CHNXdz7z.js.map",
+      "size": 14372
+    },
+    {
+      "name": "js/CommandeClient-DBASlmg2.js",
+      "path": "build/static/js/CommandeClient-DBASlmg2.js",
+      "size": 8709
+    },
+    {
+      "name": "js/CommandeClient-DBASlmg2.js.br",
+      "path": "build/static/js/CommandeClient-DBASlmg2.js.br",
+      "size": 3117
+    },
+    {
+      "name": "js/CommandeClient-DBASlmg2.js.gz",
+      "path": "build/static/js/CommandeClient-DBASlmg2.js.gz",
+      "size": 3474
+    },
+    {
+      "name": "js/CommandeClient-DBASlmg2.js.map",
+      "path": "build/static/js/CommandeClient-DBASlmg2.js.map",
+      "size": 28798
+    },
+    {
+      "name": "js/EspaceClient-CIFhxB6q.js",
+      "path": "build/static/js/EspaceClient-CIFhxB6q.js",
+      "size": 5825
+    },
+    {
+      "name": "js/EspaceClient-CIFhxB6q.js.br",
+      "path": "build/static/js/EspaceClient-CIFhxB6q.js.br",
+      "size": 2101
+    },
+    {
+      "name": "js/EspaceClient-CIFhxB6q.js.gz",
+      "path": "build/static/js/EspaceClient-CIFhxB6q.js.gz",
+      "size": 2376
+    },
+    {
+      "name": "js/EspaceClient-CIFhxB6q.js.map",
+      "path": "build/static/js/EspaceClient-CIFhxB6q.js.map",
+      "size": 19058
+    },
+    {
+      "name": "js/HomePage-AW0bB4A1.js",
+      "path": "build/static/js/HomePage-AW0bB4A1.js",
+      "size": 4211
+    },
+    {
+      "name": "js/HomePage-AW0bB4A1.js.br",
+      "path": "build/static/js/HomePage-AW0bB4A1.js.br",
+      "size": 1621
+    },
+    {
+      "name": "js/HomePage-AW0bB4A1.js.gz",
+      "path": "build/static/js/HomePage-AW0bB4A1.js.gz",
+      "size": 1861
+    },
+    {
+      "name": "js/HomePage-AW0bB4A1.js.map",
+      "path": "build/static/js/HomePage-AW0bB4A1.js.map",
+      "size": 9924
+    },
+    {
+      "name": "js/LoginClientMobile-DNbXoFDC.js",
+      "path": "build/static/js/LoginClientMobile-DNbXoFDC.js",
+      "size": 5210
+    },
+    {
+      "name": "js/LoginClientMobile-DNbXoFDC.js.br",
+      "path": "build/static/js/LoginClientMobile-DNbXoFDC.js.br",
+      "size": 2087
+    },
+    {
+      "name": "js/LoginClientMobile-DNbXoFDC.js.gz",
+      "path": "build/static/js/LoginClientMobile-DNbXoFDC.js.gz",
+      "size": 2360
+    },
+    {
+      "name": "js/LoginClientMobile-DNbXoFDC.js.map",
+      "path": "build/static/js/LoginClientMobile-DNbXoFDC.js.map",
+      "size": 14925
+    },
+    {
+      "name": "js/LoginPage-C-fQq3Gg.js",
+      "path": "build/static/js/LoginPage-C-fQq3Gg.js",
+      "size": 6115
+    },
+    {
+      "name": "js/LoginPage-C-fQq3Gg.js.br",
+      "path": "build/static/js/LoginPage-C-fQq3Gg.js.br",
+      "size": 2351
+    },
+    {
+      "name": "js/LoginPage-C-fQq3Gg.js.gz",
+      "path": "build/static/js/LoginPage-C-fQq3Gg.js.gz",
+      "size": 2689
+    },
+    {
+      "name": "js/LoginPage-C-fQq3Gg.js.map",
+      "path": "build/static/js/LoginPage-C-fQq3Gg.js.map",
+      "size": 14351
+    },
+    {
+      "name": "js/Page404-BfFBeEY8.js",
+      "path": "build/static/js/Page404-BfFBeEY8.js",
+      "size": 1195
+    },
+    {
+      "name": "js/Page404-BfFBeEY8.js.br",
+      "path": "build/static/js/Page404-BfFBeEY8.js.br",
+      "size": 578
+    },
+    {
+      "name": "js/Page404-BfFBeEY8.js.gz",
+      "path": "build/static/js/Page404-BfFBeEY8.js.gz",
+      "size": 669
+    },
+    {
+      "name": "js/Page404-BfFBeEY8.js.map",
+      "path": "build/static/js/Page404-BfFBeEY8.js.map",
+      "size": 2730
+    },
+    {
+      "name": "js/Page500-YdPIZVeG.js",
+      "path": "build/static/js/Page500-YdPIZVeG.js",
+      "size": 1209
+    },
+    {
+      "name": "js/Page500-YdPIZVeG.js.br",
+      "path": "build/static/js/Page500-YdPIZVeG.js.br",
+      "size": 582
+    },
+    {
+      "name": "js/Page500-YdPIZVeG.js.gz",
+      "path": "build/static/js/Page500-YdPIZVeG.js.gz",
+      "size": 683
+    },
+    {
+      "name": "js/Page500-YdPIZVeG.js.map",
+      "path": "build/static/js/Page500-YdPIZVeG.js.map",
+      "size": 2726
+    },
+    {
+      "name": "js/Register-Dwt5nHS6.js",
+      "path": "build/static/js/Register-Dwt5nHS6.js",
+      "size": 1615
+    },
+    {
+      "name": "js/Register-Dwt5nHS6.js.br",
+      "path": "build/static/js/Register-Dwt5nHS6.js.br",
+      "size": 602
+    },
+    {
+      "name": "js/Register-Dwt5nHS6.js.gz",
+      "path": "build/static/js/Register-Dwt5nHS6.js.gz",
+      "size": 712
+    },
+    {
+      "name": "js/Register-Dwt5nHS6.js.map",
+      "path": "build/static/js/Register-Dwt5nHS6.js.map",
+      "size": 5461
+    },
+    {
+      "name": "js/RegisterSuccessPage-BIYGrV3v.js",
+      "path": "build/static/js/RegisterSuccessPage-BIYGrV3v.js",
+      "size": 1063
+    },
+    {
+      "name": "js/RegisterSuccessPage-BIYGrV3v.js.br",
+      "path": "build/static/js/RegisterSuccessPage-BIYGrV3v.js.br",
+      "size": 628
+    },
+    {
+      "name": "js/RegisterSuccessPage-BIYGrV3v.js.gz",
+      "path": "build/static/js/RegisterSuccessPage-BIYGrV3v.js.gz",
+      "size": 701
+    },
+    {
+      "name": "js/RegisterSuccessPage-BIYGrV3v.js.map",
+      "path": "build/static/js/RegisterSuccessPage-BIYGrV3v.js.map",
+      "size": 2945
+    },
+    {
+      "name": "js/ResendActivation-CdRWOUx5.js",
+      "path": "build/static/js/ResendActivation-CdRWOUx5.js",
+      "size": 2400
+    },
+    {
+      "name": "js/ResendActivation-CdRWOUx5.js.br",
+      "path": "build/static/js/ResendActivation-CdRWOUx5.js.br",
+      "size": 1152
+    },
+    {
+      "name": "js/ResendActivation-CdRWOUx5.js.gz",
+      "path": "build/static/js/ResendActivation-CdRWOUx5.js.gz",
+      "size": 1314
+    },
+    {
+      "name": "js/ResendActivation-CdRWOUx5.js.map",
+      "path": "build/static/js/ResendActivation-CdRWOUx5.js.map",
+      "size": 6409
+    },
+    {
+      "name": "js/SetupWizard-OPyt5Y0E.js",
+      "path": "build/static/js/SetupWizard-OPyt5Y0E.js",
+      "size": 10153
+    },
+    {
+      "name": "js/SetupWizard-OPyt5Y0E.js.br",
+      "path": "build/static/js/SetupWizard-OPyt5Y0E.js.br",
+      "size": 3335
+    },
+    {
+      "name": "js/SetupWizard-OPyt5Y0E.js.gz",
+      "path": "build/static/js/SetupWizard-OPyt5Y0E.js.gz",
+      "size": 3791
+    },
+    {
+      "name": "js/SetupWizard-OPyt5Y0E.js.map",
+      "path": "build/static/js/SetupWizard-OPyt5Y0E.js.map",
+      "size": 22118
+    },
+    {
+      "name": "js/TrialRegisterPage-CR2jPCB_.js",
+      "path": "build/static/js/TrialRegisterPage-CR2jPCB_.js",
+      "size": 4363
+    },
+    {
+      "name": "js/TrialRegisterPage-CR2jPCB_.js.br",
+      "path": "build/static/js/TrialRegisterPage-CR2jPCB_.js.br",
+      "size": 1743
+    },
+    {
+      "name": "js/TrialRegisterPage-CR2jPCB_.js.gz",
+      "path": "build/static/js/TrialRegisterPage-CR2jPCB_.js.gz",
+      "size": 1982
+    },
+    {
+      "name": "js/TrialRegisterPage-CR2jPCB_.js.map",
+      "path": "build/static/js/TrialRegisterPage-CR2jPCB_.js.map",
+      "size": 11305
+    },
+    {
+      "name": "js/cil-magnifying-glass-B2_HtY5D.js",
+      "path": "build/static/js/cil-magnifying-glass-B2_HtY5D.js",
+      "size": 8089
+    },
+    {
+      "name": "js/cil-magnifying-glass-B2_HtY5D.js.br",
+      "path": "build/static/js/cil-magnifying-glass-B2_HtY5D.js.br",
+      "size": 2706
+    },
+    {
+      "name": "js/cil-magnifying-glass-B2_HtY5D.js.gz",
+      "path": "build/static/js/cil-magnifying-glass-B2_HtY5D.js.gz",
+      "size": 3067
+    },
+    {
+      "name": "js/cil-magnifying-glass-B2_HtY5D.js.map",
+      "path": "build/static/js/cil-magnifying-glass-B2_HtY5D.js.map",
+      "size": 75883
+    },
+    {
+      "name": "js/index-klH-3OZ6.js",
+      "path": "build/static/js/index-klH-3OZ6.js",
+      "size": 1356902
+    },
+    {
+      "name": "js/index-klH-3OZ6.js.br",
+      "path": "build/static/js/index-klH-3OZ6.js.br",
+      "size": 306841
+    },
+    {
+      "name": "js/index-klH-3OZ6.js.gz",
+      "path": "build/static/js/index-klH-3OZ6.js.gz",
+      "size": 377663
+    },
+    {
+      "name": "js/index-klH-3OZ6.js.map",
+      "path": "build/static/js/index-klH-3OZ6.js.map",
+      "size": 6025329
+    },
+    {
+      "name": "js/mui-Cfc9YdNL.js",
+      "path": "build/static/js/mui-Cfc9YdNL.js",
+      "size": 455557
+    },
+    {
+      "name": "js/mui-Cfc9YdNL.js.br",
+      "path": "build/static/js/mui-Cfc9YdNL.js.br",
+      "size": 108849
+    },
+    {
+      "name": "js/mui-Cfc9YdNL.js.gz",
+      "path": "build/static/js/mui-Cfc9YdNL.js.gz",
+      "size": 132916
+    },
+    {
+      "name": "js/mui-Cfc9YdNL.js.map",
+      "path": "build/static/js/mui-Cfc9YdNL.js.map",
+      "size": 2229465
+    },
+    {
+      "name": "js/router-CIKBgebH.js",
+      "path": "build/static/js/router-CIKBgebH.js",
+      "size": 37362
+    },
+    {
+      "name": "js/router-CIKBgebH.js.br",
+      "path": "build/static/js/router-CIKBgebH.js.br",
+      "size": 11850
+    },
+    {
+      "name": "js/router-CIKBgebH.js.gz",
+      "path": "build/static/js/router-CIKBgebH.js.gz",
+      "size": 13259
+    },
+    {
+      "name": "js/router-CIKBgebH.js.map",
+      "path": "build/static/js/router-CIKBgebH.js.map",
+      "size": 420021
+    },
+    {
+      "name": "js/vendor-DekTAH87.js",
+      "path": "build/static/js/vendor-DekTAH87.js",
+      "size": 11148
+    },
+    {
+      "name": "js/vendor-DekTAH87.js.br",
+      "path": "build/static/js/vendor-DekTAH87.js.br",
+      "size": 3519
+    },
+    {
+      "name": "js/vendor-DekTAH87.js.gz",
+      "path": "build/static/js/vendor-DekTAH87.js.gz",
+      "size": 3946
+    },
+    {
+      "name": "js/vendor-DekTAH87.js.map",
+      "path": "build/static/js/vendor-DekTAH87.js.map",
+      "size": 42875
+    }
+  ],
+  "recommendations": [
+    "Consider code splitting to reduce main bundle size",
+    "Split large chunks into smaller modules",
+    "Optimize large assets (images, fonts)",
+    "Consider reducing number of chunks"
+  ],
+  "warnings": 2
+}

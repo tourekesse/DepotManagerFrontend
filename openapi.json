@@ -1,0 +1,88 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Depot Manager API",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://10.0.0.213:8080",
+      "description": "Serveur Backend Réel"
+    }
+  ],
+  "paths": {
+    "/api/produits": {
+      "get": {
+        "tags": ["produit-controller"],
+        "operationId": "listProduits",
+        "responses": {
+          "200": { "description": "OK", "content": { "*/*": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProduitDTO" } } } } }
+        }
+      },
+      "post": {
+        "tags": ["produit-controller"],
+        "operationId": "createProduit",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProduitCreateRequest" } } },
+          "required": true
+        },
+        "responses": {
+          "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProduitDTO" } } } }
+        }
+      }
+    },
+    "/api/ventes/initiale": {
+      "post": {
+        "tags": ["vente-controller"],
+        "operationId": "creerVenteInitiale",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Vente" } } },
+          "required": true
+        },
+        "responses": {
+          "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Vente" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProduitCreateRequest": {
+        "type": "object",
+        "properties": {
+          "designation": { "type": "string" },
+          "marque": { "type": "string" },
+          "format": { "type": "string" },
+          "groupeLiquide": { "type": "string" },
+          "prixVenteHt": { "type": "number" },
+          "stockInitial": { "type": "integer" }
+        }
+      },
+      "ProduitDTO": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "designation": { "type": "string" },
+          "prixVenteHt": { "type": "number" },
+          "stockInitial": { "type": "integer" }
+        }
+      },
+      "Vente": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "totalGeneral": { "type": "number" },
+          "details": { "type": "array", "items": { "$ref": "#/components/schemas/DetailArticleVendu" } }
+        }
+      },
+      "DetailArticleVendu": {
+        "type": "object",
+        "properties": {
+          "produit": { "$ref": "#/components/schemas/ProduitDTO" },
+          "quantiteDemandee": { "type": "integer" },
+          "prixVenteFlash": { "type": "number" }
+        }
+      }
+    }
+  }
+}

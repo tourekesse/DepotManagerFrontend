@@ -8,6 +8,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import PrintIcon from '@mui/icons-material/Print';
+import BrokenImageIcon from '@mui/icons-material/BrokenImage';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from '../../../crud-dashboard/components/PageContainer';
 import useNotifications from '../../../crud-dashboard/hooks/useNotifications/useNotifications';
@@ -92,9 +93,27 @@ export default function MesLivraisonsPage() {
   const [otpModalOpen, setOtpModalOpen] = React.useState(false);
   const [venteEnCoursValidation, setVenteEnCoursValidation] = React.useState(null);
 
-  const handleValidate = (row) => {
-    setSelectedVente(row);
-    setStepperOpen(true);
+  const handleValidate = async (row) => {
+    try {
+      // Fetch full command details with articles before opening stepper
+      const res = await privateApi.get(`/api/commandes-mobile/${row.id}/details`);
+      const commandeDetails = res.data;
+      
+      // Merge row data with full command details (including articles/details)
+      const venteComplete = {
+        ...row,
+        ...commandeDetails,
+        // Ensure articles/details are available for LivraisonSimple
+        details: commandeDetails.details || commandeDetails.articles || [],
+        articles: commandeDetails.details || commandeDetails.articles || []
+      };
+      
+      setSelectedVente(venteComplete);
+      setStepperOpen(true);
+    } catch (error) {
+      console.error('Erreur chargement détails commande:', error);
+      notifications.show('Erreur de chargement des détails de la commande', { severity: 'error' });
+    }
   };
 
   // Ouvrir la gestion des casiers (différent pour livreur vs gérant)
@@ -235,6 +254,23 @@ export default function MesLivraisonsPage() {
       }
     },
     {
+      field: 'casse',
+      headerName: 'Casse',
+      width: 90,
+      renderCell: (params) => {
+        const nb = params.row.nbCasses || 0;
+        if (nb > 0) {
+          return (
+            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: 'error.main' }}>
+              <BrokenImageIcon sx={{ fontSize: 18 }} />
+              <Typography variant="caption" sx={{ fontWeight: 700 }}>{nb}</Typography>
+            </Stack>
+          );
+        }
+        return null;
+      }
+    },
+    {
       field: 'actions',
       type: 'actions',
       width: 200,
@@ -246,7 +282,7 @@ export default function MesLivraisonsPage() {
           actions.push(
             <GridActionsCellItem
               icon={<LocalShippingIcon />}
-              label="Livrer commande"
+              label="Envoyer code de confirmation"
               onClick={() => handleValidate(row)}
               color="primary"
             />
@@ -261,7 +297,7 @@ export default function MesLivraisonsPage() {
               label="Gérer casiers"
               onClick={() => handleOpenCasiers(row)}
               color="secondary"
-              title="Gérer les casiers/compensation"
+              title="Gérer les casiers/vides rendus"
             />
           );
         }
@@ -306,7 +342,7 @@ export default function MesLivraisonsPage() {
                       <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Livraison #{row.id}</Typography>
                       <Box>
                         {isLivreur && row.statutLivraison === 'NON_LIVREE' && (
-                          <IconButton size="small" color="primary" onClick={() => handleValidate(row)} title="Livrer">
+                          <IconButton size="small" color="primary" onClick={() => handleValidate(row)} title="Envoyer code de confirmation">
                             <LocalShippingIcon fontSize="small" />
                           </IconButton>
                         )}
@@ -328,6 +364,13 @@ export default function MesLivraisonsPage() {
                       </Box>
                     </Box>
                     <Divider sx={{ my: 1 }} />
+                    {row.nbCasses > 0 && (
+                      <Alert severity="error" sx={{ mb: 1, py: 0.25 }} icon={<BrokenImageIcon />}>
+                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                          ⚠️ {row.nbCasses} casse(s) déclarée(s)
+                        </Typography>
+                      </Alert>
+                    )}
                     <Grid container spacing={1}>
                       <Grid item xs={6}>
                         <Typography variant="caption" color="textSecondary">Client</Typography>

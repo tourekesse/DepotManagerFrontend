@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <!-- Logo vertical Dépôt Manager -->
+  <circle cx="200" cy="150" r="120" fill="#A1C535"/>
+  <circle cx="200" cy="150" r="95" fill="#F5A231"/>
+  <rect x="175" y="110" width="50" height="80" rx="6" fill="#FDE9C5"/>
+  <circle cx="200" cy="140" r="16" fill="#FBF6F2"/>
+  <rect x="185" y="155" width="30" height="20" rx="3" fill="#F5A231"/>
+  
+  <text x="200" y="320" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#151513" text-anchor="middle">
+    Dépôt
+  </text>
+  <text x="200" y="380" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#F5A231" text-anchor="middle">
+    Manager
+  </text>
+</svg>

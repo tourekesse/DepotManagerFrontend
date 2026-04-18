@@ -1,0 +1,14 @@
+[Unit]
+Description=DepotManager Auto-Deploy Service
+After=network.target
+
+[Service]
+Type=simple
+User=toure
+WorkingDirectory=/home/toure/Documents/dv2/dev2/depotmanager-frontend
+ExecStart=/home/toure/Documents/dv2/dev2/depotmanager-frontend/auto-deploy.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

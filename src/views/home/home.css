@@ -1,0 +1,87 @@
+.welcome-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+}
+
+.welcome-title {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #047857;
+  margin-bottom: 10px;
+}
+
+.welcome-subtitle {
+  font-size: 1.1rem;
+  color: #64748b;
+  margin-bottom: 40px;
+}
+
+.options-container {
+  display: flex;
+  gap: 25px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.option-card {
+  width: 280px;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #e5e7eb;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.option-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+}
+
+.card-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px auto;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Thème premium vert & blanc */
+.ic-enterprise {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.ic-essai {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.ic-client {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.card-button {
+  margin-top: 15px;
+  width: 100%;
+  border-radius: 14px;
+  font-weight: 700;
+  text-transform: none;
+  transition: all 0.3s ease;
+}
+
+.card-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}

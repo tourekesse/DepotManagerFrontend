@@ -1,0 +1,14 @@
+[build]
+  publish = "build"
+  command = "npm run build:mobile"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build.environment]
+  VITE_BACKEND_URL = "https://your-backend-domain.com"

@@ -1,4 +1,3 @@
-// src/pages/SetupWizard.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,9 +12,20 @@ import {
   Alert,
   Box,
   Typography,
-  Stack,
+  Container,
+  Grid,
+  Stepper,
+  Step,
+  StepLabel,
 } from "@mui/material";
-import GlobalStyles from "@mui/material/GlobalStyles";
+import {
+  Store,
+  MapPin,
+  Phone,
+  Building2,
+  CheckCircle,
+  ChevronRight,
+} from "lucide-react";
 import { finalizeSetup } from "./SetupService";
 
 export default function SetupWizard() {
@@ -47,14 +57,36 @@ export default function SetupWizard() {
     const phoneClean = phoneCandidate.replace(/\s/g, "");
     const isValid = etablissement && nom && phoneClean.length >= 8 && adresse;
 
+    const codeBase = nom.normalize("NFD").replace(/[\u0300-\u036f\s-]/g, "").toUpperCase().substring(0, 5);
+    const uniqueSuffix = Date.now().toString(36).toUpperCase();
+    const codePvUnique = `PV-${codeBase}-${uniqueSuffix}`;
+
     if (!isValid) {
       setErrorMsg("Tous les champs sont requis avec un téléphone valide.");
       return;
     }
 
     if (!dmUser?.userId) {
-      setErrorMsg("Impossible d’identifier l’utilisateur (userId manquant).");
+      setErrorMsg("Impossible d'identifier l'utilisateur (userId manquant).");
       return;
+    }
+
+    let profil, fonction;
+    if (etablissement === 'BAR') {
+      profil = 'Administrateur Général';
+      fonction = 'Propriétaire';
+    } else if (etablissement === 'DEPOT') {
+      profil = 'Administrateur Général';
+      fonction = 'Propriétaire';
+    } else if (etablissement === 'SOUS_DEPOT') {
+      profil = 'Administrateur';
+      fonction = 'Propriétaire';
+    } else if (etablissement === 'SOUS_DEPOT_BAR') {
+      profil = 'Administrateur';
+      fonction = 'Propriétaire';
+    } else {
+      profil = 'CLIENT_BAR';
+      fonction = 'Client';
     }
 
     const payload = {
@@ -63,12 +95,13 @@ export default function SetupWizard() {
       adresseEtablissement: adresse,
       villeEtablissement: "Abidjan",
       nomPv: nom + " - PV Principal",
-      codePv: "PV001",
+      codePv: codePvUnique,
       adressePv: adresse,
       villePv: "Abidjan",
       phonePv: phoneClean,
       typeEtablissement: etablissement,
-      role: "CLIENT_BAR",
+      profil: profil,
+      fonction: fonction,
     };
 
     setSubmitting(true);
@@ -86,7 +119,7 @@ export default function SetupWizard() {
       if (pvId) {
         dmUser.point_de_vente_actif_id = pvId;
         dmUser.pointDeVenteActifId = pvId;
-        localStorage.setItem("activePV", JSON.stringify({ id: pvId, nom: pvNom, code: payload.codePv, adresse: payload.adressePv }));
+        localStorage.setItem("activePV", JSON.stringify({ id: pvId, nom: pvNom, code: codePvUnique, adresse: payload.adressePv }));
       }
       localStorage.setItem("dmUser", JSON.stringify(dmUser));
       localStorage.setItem("role", dmUser.role);
@@ -94,7 +127,7 @@ export default function SetupWizard() {
 
       setTimeout(() => {
         navigate("/accueil");
-        window.location.reload(); // Force le rechargement du contexte utilisateur/menus
+        window.location.reload();
       }, 800);
     } catch (err) {
       setErrorMsg(err.response?.data?.message || "Le serveur a refusé la requête.");
@@ -104,276 +137,234 @@ export default function SetupWizard() {
   };
 
   return (
-    <>
-      {/* Palette et animations inspirées du thème "maquis ivoirien" */}
-      <GlobalStyles styles={`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-        :root {
-          --orange-ci: #ff8c00;
-          --blanc-ci: #ffffff;
-          --vert-ci: #00b04f;
-          --solibra-gold: #ffd700;
-          --neon-bleu: #00bfff;
-          --glaciere-blanc-rgb: 240, 248, 255;
-          --neon-bleu-rgb: 0, 191, 255;
-          --bois-acajou-rgb: 139, 69, 19;
-        }
-        .setup-wizard-page {
-          font-family: 'Poppins', 'Inter', system-ui, sans-serif;
-          background: radial-gradient(circle at 20% 20%, rgba(255, 140, 0, 0.18), transparent 32%),
-                      radial-gradient(circle at 80% 10%, rgba(0, 191, 255, 0.25), transparent 34%),
-                      linear-gradient(135deg, rgba(var(--glaciere-blanc-rgb), 0.9) 0%, rgba(var(--neon-bleu-rgb), 0.18) 100%);
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 2rem;
-          box-sizing: border-box;
-        }
-        .setup-card {
-          background: rgba(255, 255, 255, 0.18);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.35);
-          box-shadow: 0 15px 40px rgba(0, 191, 255, 0.25), 0 10px 25px rgba(0, 0, 0, 0.08);
-          border-radius: 20px;
-          animation: riseIn 0.7s ease-out forwards;
-          opacity: 0;
-        }
-        .setup-title {
-          color: var(--orange-ci);
-          font-weight: 800;
-          text-shadow: 0 6px 16px rgba(0,0,0,0.18);
-        }
-        .setup-subtitle {
-          color: rgba(var(--bois-acajou-rgb), 0.8);
-        }
-        .setup-btn {
-          background: linear-gradient(45deg, var(--orange-ci) 0%, var(--solibra-gold) 100%);
-          color: var(--blanc-ci);
-          font-weight: 700;
-          box-shadow: 0 8px 22px rgba(255, 140, 0, 0.35);
-          position: relative;
-          overflow: hidden;
-        }
-        .setup-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 28px rgba(255, 140, 0, 0.45);
-        }
-        .setup-btn:active {
-          transform: translateY(0);
-        }
-        .setup-btn::after {
-          content: "";
-          position: absolute;
-          inset: -50%;
-          background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.35), transparent 40%);
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
-        .setup-btn:hover::after { opacity: 1; }
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "#FFFFFF",
+        py: { xs: 4, md: 8 },
+      }}
+    >
+      <Container maxWidth="md">
+        {/* Header */}
+        <Box sx={{ textAlign: "center", mb: 6 }}>
+          <Box
+            component="img"
+            src="/logo.svg"
+            alt="DepotManager Logo"
+            sx={{ width: 64, height: 64, mb: 2 }}
+          />
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 800, color: "#6A1B9A", mb: 1 }}
+          >
+            Configure ton dépôt
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            On prépare ton point de vente en quelques étapes
+          </Typography>
+        </Box>
 
-        .hero-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 14px;
-          border-radius: 999px;
-          background: rgba(255, 140, 0, 0.12);
-          color: var(--orange-ci);
-          font-weight: 700;
-          box-shadow: 0 6px 16px rgba(255, 140, 0, 0.25);
-        }
-        .hero-orb {
-          width: 70px;
-          height: 70px;
-          border-radius: 50%;
-          background: radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,0) 60%), linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
-          box-shadow: 0 12px 30px rgba(0, 191, 255, 0.35);
-          display: grid;
-          place-items: center;
-          color: white;
-          font-size: 32px;
-          animation: floaty 4s ease-in-out infinite;
-        }
-        .pattern {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background-image: radial-gradient(rgba(255,255,255,0.18) 1px, transparent 0);
-          background-size: 26px 26px;
-          opacity: 0.35;
-        }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
-        @keyframes floaty {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
-        }
-        @keyframes riseIn {
-          from { transform: translateY(24px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-      `}/>
-      <Box className="setup-wizard-page">
-        <Card className="setup-card" sx={{ width: "100%", maxWidth: 760, position: "relative", overflow: "hidden" }}>
-          <span className="pattern" />
-          <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-            <Stack direction={{ xs: "column", md: "row" }} spacing={3} alignItems="center" mb={3}>
-              <Box className="hero-orb" aria-hidden>
-                🚚
-              </Box>
-              <Box flex={1} textAlign={{ xs: "center", md: "left" }}>
-                <Box display="inline-flex" className="hero-badge delay-1" sx={{ mb: 1 }}>
-                  <span>Essai gratuit</span>
-                  <span style={{ fontWeight: 800 }}>14 jours</span>
-                </Box>
-                <Typography variant="h4" className="setup-title delay-2" gutterBottom>
-                  Configure ton dépôt en 2 minutes
-                </Typography>
-                <Typography variant="subtitle1" className="setup-subtitle delay-3">
-                  On prépare ton point de vente, tes casiers et tes livraisons dès maintenant.
-                </Typography>
-              </Box>
-            </Stack>
-            <Box mb={3}>
+        {/* Stepper */}
+        <Stepper activeStep={0} sx={{ mb: 5 }}>
+          <Step completed={false}>
+            <StepLabel>Informations</StepLabel>
+          </Step>
+          <Step>
+            <StepLabel>Confirmation</StepLabel>
+          </Step>
+        </Stepper>
+
+        {/* Form Card */}
+        <Card
+          sx={{
+            borderRadius: 3,
+            border: "1px solid #e0e0e0",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+          }}
+        >
+          <CardContent sx={{ p: 4 }}>
+            {/* Badges */}
+            <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
               <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
                   gap: 1,
-                  mb: 1,
-                  color: "primary.main",
-                  fontWeight: 700,
+                  px: 2,
+                  py: 1,
+                  borderRadius: 2,
+                  bgcolor: "#e8f5e9",
+                  color: "#2e7d32",
                 }}
-                className="delay-2"
               >
-                <Box
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: "50%",
-                    bgcolor: "primary.main",
-                    boxShadow: "0 0 0 6px rgba(0,191,255,0.18)"
-                  }}
-                />
-                <span>Étape unique : informations du dépôt</span>
+                <CheckCircle size={16} />
+                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                  14 jours gratuit
+                </Typography>
               </Box>
               <Box
                 sx={{
-                  height: 6,
-                  borderRadius: 999,
-                  background: "linear-gradient(90deg, #00bfff 0%, #ff8c00 100%)",
-                  boxShadow: "0 6px 14px rgba(255,140,0,0.35)"
-                }}
-                className="delay-3"
-              />
-            </Box>
-
-          {errorMsg && (
-            <Alert severity="error" sx={{ mb: 2, textAlign: "center" }}>
-              {errorMsg}
-            </Alert>
-          )}
-
-          {successMsg && (
-            <Alert severity="success" sx={{ mb: 2, textAlign: "center" }}>
-              {successMsg}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit}>
-            <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel>Type d'activité *</InputLabel>
-              <Select
-                value={etablissement}
-                label="Type d'activité *"
-                onChange={(e) => setTypeEtablissement(e.target.value)}
-                required
-              >
-                <MenuItem value="">
-                  <em>-- Sélectionnez le type --</em>
-                </MenuItem>
-                {typesOptions.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <TextField
-              fullWidth
-              label="Nom *"
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              required
-              sx={{ mb: 3 }}
-            />
-
-            <TextField
-              fullWidth
-              label="Téléphone *"
-              value={telephone}
-              onChange={(e) => setTelephone(e.target.value)}
-              placeholder="99 99 99 99 99"
-              required
-              sx={{ mb: 3 }}
-            />
-
-            <TextField
-              fullWidth
-              label="Adresse *"
-              value={adresse}
-              onChange={(e) => setAdresse(e.target.value)}
-              required
-              sx={{ mb: 4 }}
-            />
-
-            <Button
-              type="submit"
-              variant="contained"
-              className="setup-btn"
-              fullWidth
-              size="large"
-              sx={{ py: 1.4, borderRadius: 2 }}
-              disabled={submitting}
-            >
-              {submitting ? "Création en cours..." : "Créer mon Dépôt"}
-            </Button>
-
-            <Box
-              mt={2.5}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              gap={1.5}
-              sx={{ color: "rgba(0,0,0,0.72)", fontWeight: 600 }}
-              className="delay-4"
-            >
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: "rgba(0,191,255,0.15)",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "#00bfff",
-                  fontWeight: 800,
-                  boxShadow: "0 8px 18px rgba(0,191,255,0.25)"
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  px: 2,
+                  py: 1,
+                  borderRadius: 2,
+                  bgcolor: "#f3e5f5",
+                  color: "#6A1B9A",
                 }}
               >
-                ?
+                <CheckCircle size={16} />
+                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                  Sans carte bancaire
+                </Typography>
               </Box>
-              <span>Besoin d’aide ? Écrivez-nous sur supportdepotmanager@gm-soft.ca.</span>
             </Box>
-          </Box>
-        </CardContent>
-      </Card>
-      </Box>
-    </>
+
+            {errorMsg && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {errorMsg}
+              </Alert>
+            )}
+
+            {successMsg && (
+              <Alert severity="success" sx={{ mb: 3 }}>
+                {successMsg}
+              </Alert>
+            )}
+
+            <Box component="form" onSubmit={handleSubmit}>
+              <Grid container spacing={3}>
+                {/* Type d'activité */}
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Type d'activité *</InputLabel>
+                    <Select
+                      value={etablissement}
+                      label="Type d'activité *"
+                      onChange={(e) => setTypeEtablissement(e.target.value)}
+                      required
+                      startAdornment={
+                        <Box sx={{ pl: 1, pr: 1, display: "flex" }}>
+                          <Building2 size={20} color="#6A1B9A" />
+                        </Box>
+                      }
+                    >
+                      <MenuItem value="">
+                        <em>-- Sélectionnez le type --</em>
+                      </MenuItem>
+                      {typesOptions.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                {/* Nom */}
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Nom de l'établissement *"
+                    value={nom}
+                    onChange={(e) => setNom(e.target.value)}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <Box sx={{ pl: 1, pr: 1, display: "flex" }}>
+                          <Store size={20} color="#6A1B9A" />
+                        </Box>
+                      ),
+                    }}
+                  />
+                </Grid>
+
+                {/* Téléphone */}
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Téléphone *"
+                    value={telephone}
+                    onChange={(e) => setTelephone(e.target.value)}
+                    placeholder="07 XX XX XX XX"
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <Box sx={{ pl: 1, pr: 1, display: "flex" }}>
+                          <Phone size={20} color="#6A1B9A" />
+                        </Box>
+                      ),
+                    }}
+                  />
+                </Grid>
+
+                {/* Adresse */}
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Adresse *"
+                    value={adresse}
+                    onChange={(e) => setAdresse(e.target.value)}
+                    placeholder="Quartier, rue..."
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <Box sx={{ pl: 1, pr: 1, display: "flex" }}>
+                          <MapPin size={20} color="#6A1B9A" />
+                        </Box>
+                      ),
+                    }}
+                  />
+                </Grid>
+
+                {/* Submit */}
+                <Grid item xs={12}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    disabled={submitting}
+                    endIcon={submitting ? null : <ChevronRight size={20} />}
+                    sx={{
+                      bgcolor: "#6A1B9A",
+                      py: 1.5,
+                      fontWeight: 700,
+                      "&:hover": { bgcolor: "#7E57C2" },
+                    }}
+                  >
+                    {submitting ? "Création en cours..." : "Créer mon dépôt"}
+                  </Button>
+                </Grid>
+
+                {/* Help */}
+                <Grid item xs={12}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 1.5,
+                      mt: 2,
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Besoin d'aide ?
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "#6A1B9A", fontWeight: 600 }}
+                    >
+                      supportdepotmanager@gm-soft.ca
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </CardContent>
+        </Card>
+      </Container>
+    </Box>
   );
 }

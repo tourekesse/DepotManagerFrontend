@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-02-28T03:41:46.952Z",
+  "testResults": {
+    "login": "success",
+    "accessVente": "success",
+    "selectClient": "error",
+    "configVente": "default",
+    "addProducts": "success",
+    "openCart": "success",
+    "validation": "not_found"
+  },
+  "summary": {
+    "totalSteps": 7,
+    "successfulSteps": 4,
+    "successRate": 57
+  }
+}
