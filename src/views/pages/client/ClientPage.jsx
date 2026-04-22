@@ -43,6 +43,8 @@ import useNotifications from "../../../crud-dashboard/hooks/useNotifications/use
 import { publicApi, privateApi } from "../../../api/axios";
 import GererCasiersModal from "../../../components/GererCasiersModal";
 import InvitationModal from "../../../components/InvitationModal";
+import PdfPreview from "../../../components/PdfPreview";
+import { getBaseUrl } from "../../../config/api.config";
 
 const formatF = (n) => {
   if (n === null || n === undefined) return "0 F";
@@ -69,7 +71,8 @@ export default function ClientPage() {
     categorieClient: "BAR",
     nomGerant: "",
     ville: "",
-    email: ""
+    email: "",
+    soldeInitial: 0
   });
 
   // States pour releve
@@ -78,6 +81,10 @@ export default function ClientPage() {
   const [releveLoading, setReleveLoading] = React.useState(false);
   const [selectedClientForReleve, setSelectedClientForReleve] = React.useState(null);
   const [releveDetail, setReleveDetail] = React.useState(true);
+
+  // States pour preview modal
+  const [openPdfPreview, setOpenPdfPreview] = React.useState(false);
+  const [mois, setMois] = React.useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
 
   // States pour gérer casiers
   const [casiersModalOpen, setCasiersModalOpen] = React.useState(false);
@@ -122,7 +129,8 @@ export default function ClientPage() {
       categorieClient: "BAR",
       nomGerant: "",
       ville: "",
-      email: ""
+      email: "",
+      soldeInitial: 0
     });
     setOpenForm(true);
   };
@@ -136,7 +144,8 @@ export default function ClientPage() {
       categorieClient: row.categorieClient || "BAR",
       nomGerant: row.nomGerant || "",
       ville: row.ville || "",
-      email: row.email || ""
+      email: row.email || "",
+      soldeInitial: 0
     });
     setOpenForm(true);
   };
@@ -193,23 +202,55 @@ export default function ClientPage() {
     }
   };
 
-  // Imprimer relevé (format 58mm)
+  // Imprimer relevé (PDF) - ouvre modal preview avec le bon client
   const handlePrintReleve = () => {
-    window.print();
+    setOpenPdfPreview(true);
   };
 
-  // Envoyer relevé par WhatsApp
-  const handleSendRelevWhatsApp = async (clientId) => {
+  // Imprimer directement depuis le modal PDF
+  const handlePrintFromPreview = (pdfUrl) => {
+    const printWindow = window.open(pdfUrl, '_blank');
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  };
+
+  // Envoyer relevé par WhatsApp - partage le PDF
+  const handleSendRelevWhatsApp = async () => {
     try {
-      const res = await publicApi.post(`/api/clients/${clientId}/releve/whatsapp`);
-      notifications.show(res.data.message || "Relevé envoyé par WhatsApp", {
-        severity: "success"
+      const token = localStorage.getItem('token');
+      const apiBase = getBaseUrl();
+      const url = `${apiBase}/rapport/releve-pdf/${selectedClientForReleve?.id}?mois=${mois}`;
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!response.ok) throw new Error('Failed to fetch PDF');
+      const blob = await response.blob();
+      const file = new File([blob], `releve_client_${selectedClientForReleve?.id}_${mois}.pdf`, { type: 'application/pdf' });
+
+      if (navigator.share) {
+        await navigator.share({
+          files: [file],
+          title: 'Relevé Client',
+          text: `Relevé de ${selectedClientForReleve?.raisonsociale}`
+        });
+        notifications.show("Relevé partagé avec succès", { severity: "success" });
+      } else {
+        // Fallback: télécharger le fichier
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `releve_client_${selectedClientForReleve?.id}_${mois}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+        notifications.show("PDF téléchargé (partage non supporté)", { severity: "info" });
+      }
     } catch (err) {
-      notifications.show(
-        err.response?.data?.message || "Erreur lors de l'envoi du relevé",
-        { severity: "error" }
-      );
+      if (err.name !== 'AbortError') {
+        notifications.show("Erreur lors du partage du PDF", { severity: "error" });
+      }
     }
   };
 
@@ -509,6 +550,19 @@ export default function ClientPage() {
               margin="normal"
             />
           )}
+
+          {!editingId && (
+            <TextField
+              fullWidth
+              label="Solde initial (F CFA)"
+              type="number"
+              value={formData.soldeInitial}
+              onChange={(e) => setFormData({ ...formData, soldeInitial: parseInt(e.target.value) || 0 })}
+              margin="normal"
+              placeholder="0"
+              helperText="Laisser 0 si client nouveau sans dette ni crédit"
+            />
+          )}
         </DialogContent>
 
         <DialogActions>
@@ -656,21 +710,13 @@ export default function ClientPage() {
           <Button
             variant="outlined"
             startIcon={<PrintIcon />}
-            onClick={handlePrintReleve}
-            sx={{ fontWeight: 700, color: "#673ab7", borderColor: "#673ab7" }}
-          >
-            Imprimer (58mm)
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<WhatsAppIcon />}
             onClick={() => {
-              handleSendRelevWhatsApp(selectedClientForReleve?.id);
+              setOpenPdfPreview(true);
               setOpenReleve(false);
             }}
-            sx={{ backgroundColor: "#25d366", fontWeight: 700 }}
+            sx={{ fontWeight: 700, color: "#673ab7", borderColor: "#673ab7" }}
           >
-            Envoyer par WhatsApp
+            Aperçu PDF
           </Button>
         </DialogActions>
       </Dialog>
@@ -705,6 +751,19 @@ export default function ClientPage() {
         mode={invitationMode}
         preselectedClient={window.selectedClientForInvitation}
       />
+
+      {/* ===== PDF PREVIEW MODAL ===== */}
+      <Dialog open={openPdfPreview} onClose={() => setOpenPdfPreview(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Prévisualisation du Relevé PDF</DialogTitle>
+        <DialogContent>
+          <PdfPreview
+            clientId={selectedClientForReleve?.id}
+            mois={mois}
+            clientName={selectedClientForReleve?.raisonsociale}
+            onClose={() => setOpenPdfPreview(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }
