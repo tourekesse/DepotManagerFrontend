@@ -58,6 +58,25 @@ export default function ProductForm({
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
 
+  const DEFAULT_GROUPES_LIQUIDES = [
+    "BIERE", "GAZEUSE", "EAU", "VIN", "VIN MOUSSEUX", "SODA",
+    "MALTA", "JUS", "SPIRITUEUX", "ENERGISANT", "CIDRE", "AUTRE",
+  ];
+
+  const buildGroupeOptions = () => {
+    const apiGroupes = referentiels.groupesLiquides || [];
+    const seen = new Set();
+    const merged = [];
+    DEFAULT_GROUPES_LIQUIDES.forEach((libelle) => {
+      if (!seen.has(libelle)) { seen.add(libelle); merged.push({ libelle }); }
+    });
+    apiGroupes.forEach((option) => {
+      const libelle = typeof option === "string" ? option : option?.libelle;
+      if (libelle && !seen.has(libelle)) { seen.add(libelle); merged.push(option); }
+    });
+    return merged;
+  };
+
   const levenshtein = (a, b) => {
     if (a === b) return 0;
     if (!a) return b.length;
@@ -278,6 +297,58 @@ export default function ProductForm({
     />
   );
 
+  const renderGroupeAutocomplete = () => (
+    <Autocomplete
+      freeSolo
+      size="small"
+      options={buildGroupeOptions()}
+      value={values.groupeLiquide || ""}
+      inputValue={values.groupeLiquide || ""}
+      getOptionLabel={(option) => (typeof option === "string" ? option : option?.libelle || "")}
+      isOptionEqualToValue={(option, value) => {
+        const optionLabel = typeof option === "string" ? option : option?.libelle;
+        const valueLabel = typeof value === "string" ? value : value?.libelle;
+        return normalizeText(optionLabel) === normalizeText(valueLabel);
+      }}
+      filterOptions={(options, state) => {
+        const input = normalizeText(state.inputValue);
+        if (!input) return options.slice(0, 20);
+        return options
+          .filter((option) => normalizeText(option.libelle).includes(input))
+          .slice(0, 20);
+      }}
+      onChange={(_, option) => {
+        const value = typeof option === "string" ? option : option?.libelle || "";
+        onChange({ target: { name: "groupeLiquide", value } });
+      }}
+      onInputChange={(_, value, reason) => {
+        if (reason !== "reset") {
+          onChange({ target: { name: "groupeLiquide", value } });
+        }
+      }}
+      renderOption={(props, option) => (
+        <Box component="li" {...props} sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+          <span>{typeof option === "string" ? option : option.libelle}</span>
+          {option?.source && (
+            <Typography component="span" variant="caption" color="text.secondary">
+              {option.source === "CATALOGUE" ? "Catalogue" : "Local"}
+            </Typography>
+          )}
+        </Box>
+      )}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Groupe liquide"
+          required
+          error={!!errors.groupeLiquide}
+          helperText={errors.groupeLiquide || "Ex: BIERE, GAZEUSE, EAU, VIN, JUS..."}
+          fullWidth
+        />
+      )}
+    />
+  );
+
   return (
     <>
       <Card sx={{ maxHeight: { xs: "calc(100vh - 96px)", md: "calc(100vh - 128px)" }, display: "flex", flexDirection: "column" }}>
@@ -371,13 +442,7 @@ export default function ProductForm({
             <Typography sx={sectionTitleSx}>Classification</Typography>
             <Box sx={sectionGridSx}>
               <Box sx={{ minWidth: 0 }}>
-                {renderReferentielSelect({
-                  name: "groupeLiquide",
-                  label: "Groupe liquide",
-                  options: referentiels.groupesLiquides,
-                  required: true,
-                  helperText: errors.groupeLiquide || "Ex: BIERE, GAZEUSE, EAU, VIN...",
-                })}
+                {renderGroupeAutocomplete()}
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <TextField
