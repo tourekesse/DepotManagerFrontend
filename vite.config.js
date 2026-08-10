@@ -5,15 +5,15 @@ import autoprefixer from 'autoprefixer'
 import { visualizer } from 'rollup-plugin-visualizer'
 import viteCompression from 'vite-plugin-compression'
 
-const DEFAULT_BACKEND = 'http://localhost:8085'
+const DEFAULT_BACKEND = 'http://localhost:8080'
 
 async function getBackendUrl() {
   try {
-    const res = await fetch('http://localhost:8085/api/endpoints/backend')
+    const res = await fetch('http://localhost:8080/api/endpoints/backend')
     if (res.ok) {
       const data = await res.json()
-      const port = data.port || '8085'
-      return `${data.url}:${port}`
+      const port = data.port ? `:${data.port}` : ''
+      return `${data.url}${port}`
     }
   } catch (e) {
     console.log('Using default backend URL')
@@ -112,8 +112,8 @@ export default defineConfig(async ({ mode }) => {
     },
     
     esbuild: {
-      loader: 'jsx',
-      include: /src\/.*\.jsx?$/,
+      loader: 'tsx',
+      include: /src\/.*\.(js|jsx|ts|tsx)$/,
       exclude: [],
       drop: isProduction ? ['console', 'debugger'] : [],
       legalComments: 'none',
@@ -149,7 +149,7 @@ export default defineConfig(async ({ mode }) => {
     server: {
       host: true,
       port: 5174,
-      allowedHosts: ['shandra-electronegative-ladylike.ngrok-free.dev'],
+      allowedHosts: ['shandra-electronegative-ladylike.ngrok-free.dev', 'depotmanager.gm-soft.ca'],
       proxy: {
         '/api': {
           target: backendUrl,
