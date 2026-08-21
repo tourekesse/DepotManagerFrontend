@@ -8,9 +8,11 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import { Link } from 'react-router';
 import ThemeSwitcher from './ThemeSwitcher';
+import { useUser } from '../../context/UserContext';
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   borderWidth: 0,
@@ -45,6 +47,7 @@ export default function DashboardHeader({
   onToggleMenu,
 }: DashboardHeaderProps) {
   const theme = useTheme();
+  const { user, getDisplayName, activePointDeVente } = useUser();
 
   const handleMenuOpen = React.useCallback(() => {
     onToggleMenu(!menuOpen);
@@ -115,6 +118,30 @@ export default function DashboardHeader({
             spacing={1}
             sx={{ marginLeft: 'auto' }}
           >
+            {/* Info utilisateur connecté */}
+            {user && (
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ display: { xs: 'none', sm: 'flex' } }}>
+                <Chip
+                  size="small"
+                  label={getDisplayName()}
+                  variant="outlined"
+                  sx={{ 
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    fontSize: '0.75rem'
+                  }}
+                />
+                {activePointDeVente && (
+                  <Chip
+                    size="small"
+                    label={activePointDeVente.nom}
+                    variant="filled"
+                    color="primary"
+                    sx={{ fontSize: '0.7rem' }}
+                  />
+                )}
+              </Stack>
+            )}
             <Stack direction="row" alignItems="center">
               <ThemeSwitcher />
             </Stack>

@@ -288,8 +288,10 @@ const LivreurCasiersModal = ({ open, onClose, commande, onValidate, clientNom })
   // 🔴 Imprimer le reçu en PDF
   const handlePrintReceiptPDF = () => {
     if (receiptPdfUrl) {
-      const printWindow = window.open(receiptPdfUrl, '_blank');
-      printWindow?.print();
+      // Ouvrir le PDF dans un nouvel onglet (comportement standard _blank)
+      window.open(receiptPdfUrl, '_blank');
+      // Fermer le modal pour permettre à l'utilisateur de continuer
+      handleCloseReceipt();
     }
   };
 
@@ -767,7 +769,7 @@ const LivreurCasiersModal = ({ open, onClose, commande, onValidate, clientNom })
         onClick={handleValidateLivraison}
         startIcon={<LocalShipping />}
       >
-        Finaliser la livraison
+        {paiementRecu ? 'Commande Encaissée' : 'Commande Non encaissée'}
       </Button>
       
       <Button size="small" color="inherit" onClick={() => setStep(2)}>

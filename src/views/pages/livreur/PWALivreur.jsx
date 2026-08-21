@@ -32,13 +32,11 @@ import {
   LocalAtm,
 } from '@mui/icons-material';
 import { privateApi } from '../../../api/axios';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 const formatMontant = (montant) => {
-  if (!montant || isNaN(montant)) return '0 FCFA';
-  return new Intl.NumberFormat('fr-FR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(montant) + ' FCFA';
+  if (!montant || isNaN(montant)) return formatCurrency(0);
+  return formatCurrency(montant);
 };
 
 // Dialog pour livrer une vente

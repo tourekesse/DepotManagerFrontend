@@ -28,7 +28,7 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import PersonIcon from "@mui/icons-material/Person";
 import PageContainer from "../../../crud-dashboard/components/PageContainer";
 import useNotifications from "../../../crud-dashboard/hooks/useNotifications/useNotifications";
-import { publicApi } from "../../../api/axios";
+import { privateApi } from "../../../api/axios";
 
 const formatF = (n) => {
   if (n === null || n === undefined) return "0 F";
@@ -61,7 +61,7 @@ export default function AbonnementListPage() {
     setError(null);
     try {
       // Charger tous les abonnements
-      const res = await publicApi.get("/api/abonnements");
+      const res = await privateApi.get("/api/abonnements");
       setAbonnements(res.data || []);
       
       // Calculer les stats
@@ -97,11 +97,11 @@ export default function AbonnementListPage() {
       type: "number"
     },
     {
-      field: "clientRaisonsociale",
-      headerName: "Client",
+      field: "pointDeVenteNom",
+      headerName: "Point de vente",
       flex: 1,
       minWidth: 150,
-      valueGetter: (params) => params.value || "-"
+      valueGetter: (value, row) => row?.pointDeVenteNom || row?.clientRaisonsociale || "-"
     },
     {
       field: "type",
@@ -109,9 +109,13 @@ export default function AbonnementListPage() {
       width: 100,
       renderCell: (params) => (
         <Chip
-          label={params.value === "BAR" ? "🍺 Bar" : "🎵 Maquis"}
+          label={
+            params.value === "BAR" ? "🍺 Bar"
+              : params.value === "SOUS_DEPOT" ? "📦 Sous-dépôt"
+              : "🎵 Maquis"
+          }
           size="small"
-          color={params.value === "BAR" ? "success" : "warning"}
+          color={params.value === "BAR" ? "success" : params.value === "SOUS_DEPOT" ? "info" : "warning"}
           variant="outlined"
         />
       )
@@ -154,13 +158,13 @@ export default function AbonnementListPage() {
       field: "dateDebut",
       headerName: "Début",
       width: 100,
-      valueFormatter: (params) => formatDate(params.value)
+      valueFormatter: (value) => formatDate(value)
     },
     {
       field: "dateFin",
       headerName: "Fin",
       width: 100,
-      valueFormatter: (params) => formatDate(params.value)
+      valueFormatter: (value) => formatDate(value)
     },
     {
       field: "telephonePaiement",
@@ -171,9 +175,9 @@ export default function AbonnementListPage() {
       field: "createdAt",
       headerName: "Créé le",
       width: 120,
-      valueFormatter: (params) => {
-        if (!params.value) return "-";
-        return new Date(params.value).toLocaleDateString("fr-CI");
+      valueFormatter: (value) => {
+        if (!value) return "-";
+        return new Date(value).toLocaleDateString("fr-CI");
       }
     }
   ];

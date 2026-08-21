@@ -24,6 +24,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { privateApi } from "../api/axios";
+import { formatCurrency } from "../utils/currencyUtils";
 
 export default function ConvertirCommandeModal({ open, onClose, commande, onSuccess }) {
   const [livreurs, setLivreurs] = useState([]);
@@ -144,7 +145,7 @@ export default function ConvertirCommandeModal({ open, onClose, commande, onSucc
             <strong>Client:</strong> {commande.clientNom}
           </Typography>
           <Typography variant="body2" gutterBottom>
-            <strong>Montant:</strong> {parseFloat(commande.montantTotal || 0).toLocaleString("fr-FR")} FCFA
+            <strong>Montant:</strong> {formatCurrency(parseFloat(commande.montantTotal || 0))}
           </Typography>
           <Typography variant="body2" gutterBottom>
             <strong>Mode:</strong> {isLivraison ? "Livraison" : "Retrait"}
@@ -189,7 +190,7 @@ export default function ConvertirCommandeModal({ open, onClose, commande, onSucc
               <TableRow>
                 <TableCell colSpan={3} align="right"><strong>Total:</strong></TableCell>
                 <TableCell align="right">
-                  <strong>{calculateTotal().toLocaleString("fr-FR")} FCFA</strong>
+                  <strong>{formatCurrency(calculateTotal())}</strong>
                 </TableCell>
               </TableRow>
             </TableBody>

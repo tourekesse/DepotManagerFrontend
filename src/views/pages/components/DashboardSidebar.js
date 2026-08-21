@@ -123,13 +123,13 @@ expanded = true,
                         selected={!!matchPath('/accueil/ventes/*', pathname)}
                         />         
                 
-                    {/* LIVREURS */}
+                    {/* UTILISATEURS */}
                     <DashboardSidebarPageItem
-                        id="livreurs"
-                        title="Livreurs"
+                        id="utilisateur"
+                        title="Utilisateurs"
                         icon={<LocalShippingIcon />}
-                        href="/accueil/livreurs"
-                        selected={!!matchPath('/accueil/livreurs*', pathname)}
+                        href="/accueil/utilisateur"
+                        selected={!!matchPath('/accueil/utilisateur*', pathname)}
                     />
                 
                     </List>

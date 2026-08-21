@@ -7,6 +7,7 @@ import { Outlet } from 'react-router';
 import DashboardHeader from './DashboardHeader';
 import DashboardSidebar from './DashboardSidebar';
 import SitemarkIcon from './SitemarkIcon';
+import SitaAssistant from '../../components/sita/SitaAssistant';
 
 export default function DashboardLayout() {
   const theme = useTheme();
@@ -52,7 +53,7 @@ export default function DashboardLayout() {
       sx={{
         position: 'relative',
         display: 'flex',
-        overflow: 'hidden',
+        overflow: 'visible',
         height: '100%',
         width: '100%',
       }}
@@ -89,6 +90,8 @@ export default function DashboardLayout() {
           <Outlet />
         </Box>
       </Box>
+
+      <SitaAssistant />
     </Box>
   );
 }

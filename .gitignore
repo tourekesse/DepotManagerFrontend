@@ -33,8 +33,18 @@ nbproject/
 # Tests / reports
 *.lcov
 coverage-final.json
+test-results/
+playwright-report/
 
 # Misc
 *.local
 *.zip
-*.bak
+*.tar.gz
+*.iml
+.poolside/
+srcold/
+backup_*/
+debug-screenshot.png
+*backup-*
+*.bak-*
+BoissonAppHHHHHH.jsx

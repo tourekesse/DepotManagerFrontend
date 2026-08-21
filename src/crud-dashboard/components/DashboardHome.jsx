@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Paper, Grid, CircularProgress } from "@mui/material";
+import { Box, Typography, Paper, Grid, CircularProgress, Chip, Stack, Avatar } from "@mui/material";
 import {
   TrendingUp,
   ShoppingCart,
@@ -13,19 +13,21 @@ import {
 import { LineChart } from "@mui/x-charts/LineChart";
 import { privateApi } from "../../api/axios";
 import { getUserRole, ROLES } from "../../config/roleConfig";
+import { useUser } from "../../context/UserContext";
 
 export default function DashboardHome() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const userRole = getUserRole();
+  const { user, getDisplayName, activePointDeVente } = useUser();
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         // Choisir l'endpoint selon le rôle
         const endpoint = userRole === ROLES.CLIENT_BAR 
-          ? "/api/dashboard/stats/client" 
-          : "/api/dashboard/stats";
+          ? "/api/stats/client" 
+          : "/api/stats/dashboard";
         
         const response = await privateApi.get(endpoint);
         setStats(response.data);
@@ -66,10 +68,10 @@ export default function DashboardHome() {
 
   const ventes7JoursLabels = stats?.ventes7JoursLabels || [];
   const ventes7JoursTotals = (stats?.ventes7JoursTotals || []).map((value) =>
-    Number(value || 0)
+    Number(value) || 0
   );
   const ventes7JoursCounts = (stats?.ventes7JoursCounts || []).map((value) =>
-    Number(value || 0)
+    Number(value) || 0
   );
   const totalVentes7Jours = ventes7JoursTotals.reduce(
     (sum, value) => sum + value,
@@ -96,7 +98,7 @@ export default function DashboardHome() {
       color: "#e3f2fd",
     },
     {
-      title: "Commandes en attente",
+      title: "Commandes clients en attente",
       value: stats?.commandesEnAttente || 0,
       icon: <ShoppingCart sx={{ fontSize: 40, color: "#ff9800" }} />,
       color: "#fff3e0",
@@ -162,6 +164,48 @@ export default function DashboardHome() {
 
   return (
     <Box sx={{ p: 3 }}>
+      {/* ✅ BARRE INFO UTILISATEUR CONNECTÉ */}
+      {user && (
+        <Paper
+          sx={{
+            p: 2,
+            mb: 3,
+            borderRadius: 2,
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "white",
+          }}
+        >
+          <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Avatar sx={{ width: 56, height: 56, bgcolor: "rgba(255,255,255,0.2)" }}>
+                {getDisplayName().charAt(0)}
+              </Avatar>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  {getDisplayName()}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  {user.phone && `📱 ${user.phone}`}
+                  {user.role && ` • ${user.role.replace("_", " ")}`}
+                </Typography>
+              </Box>
+            </Stack>
+            {activePointDeVente && (
+              <Chip
+                label={activePointDeVente.nom}
+                variant="filled"
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.2)",
+                  color: "white",
+                  borderColor: "rgba(255,255,255,0.4)",
+                  fontWeight: 500,
+                }}
+              />
+            )}
+          </Stack>
+        </Paper>
+      )}
+
       {/* ✅ TITRE */}
       <Typography variant="h4" sx={{ mb: 3, fontWeight: 600 }}>
         {userRole === ROLES.CLIENT_BAR ? "Mon tableau de bord" : "Tableau de bord"}

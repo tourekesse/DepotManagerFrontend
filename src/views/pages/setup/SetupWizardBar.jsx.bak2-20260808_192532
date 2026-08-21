@@ -1,0 +1,266 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Alert,
+  Grid,
+  Stack,
+  CircularProgress,
+  Paper,
+} from "@mui/material";
+import StoreIcon from "@mui/icons-material/Store";
+import PhoneIcon from "@mui/icons-material/Phone";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PlayCircleIcon from "@mui/icons-material/PlayCircle";
+import WineBarIcon from "@mui/icons-material/WineBar";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { getCountries, DEFAULT_COUNTRY, getCountryByCode } from "../../../config/countries";
+import { finalizeSetup } from "./SetupService";
+
+// TODO: remplacer par le lien Youtube de la démo une fois disponible
+const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=demo-bar";
+
+export default function SetupWizardBar() {
+  const navigate = useNavigate();
+
+  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY.code);
+  const [nom, setNom] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [adresse, setAdresse] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const country = getCountryByCode(countryCode);
+
+  const openDemo = () => {
+    window.open(DEMO_VIDEO_URL, "_blank", "noopener,noreferrer");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    if (submitting) return;
+
+    const dmUser = JSON.parse(localStorage.getItem("dmUser"));
+    const phoneCandidate = telephone || dmUser?.phone_number || dmUser?.phone || "";
+    const phoneClean = phoneCandidate.replace(/\s/g, "");
+
+    const missing = [];
+    if (!nom.trim()) missing.push("Nom de l'établissement");
+    if (phoneClean.length < country.phoneDigits) missing.push("Téléphone");
+    if (!adresse.trim()) missing.push("Quartier / localisation");
+
+    if (missing.length > 0) {
+      setErrorMsg(`Champs manquants : ${missing.join(", ")}`);
+      return;
+    }
+
+    const codeBase = nom.normalize("NFD").replace(/[\u0300-\u036f\s-]/g, "").toUpperCase().substring(0, 5);
+    const uniqueSuffix = Date.now().toString(36).toUpperCase();
+    const codePvUnique = `PV-${codeBase}-${uniqueSuffix}`;
+
+    if (!dmUser?.userId) {
+      setErrorMsg("Impossible d'identifier l'utilisateur (userId manquant).");
+      return;
+    }
+
+    const profil = "Administrateur Général";
+    const fonction = "Propriétaire";
+    const etablissement = "BAR";
+
+    const payload = {
+      userId: dmUser.userId,
+      nomEtablissement: nom,
+      adresseEtablissement: adresse,
+      villeEtablissement: country.mapCity,
+      nomPv: nom + " - PV Principal",
+      codePv: codePvUnique,
+      adressePv: adresse,
+      villePv: country.mapCity,
+      phonePv: phoneClean,
+      pays: country.code,
+      dialCode: country.dialCode,
+      typeEtablissement: etablissement,
+      profil: profil,
+      fonction: fonction,
+      latitude: undefined,
+      longitude: undefined,
+    };
+
+    setSubmitting(true);
+    try {
+      const res = await finalizeSetup(payload);
+      setSuccessMsg(res.message || "Configuration complétée.");
+
+      const pvId = res.pointDeVenteId || res.pvId || res.point_de_vente_id;
+      const pvNom = res.pointDeVenteNom || payload.nomPv;
+
+      dmUser.onboardingCompleted = true;
+      dmUser.role = "PROPRIETAIRE_BAR";
+      if (pvId) {
+        dmUser.point_de_vente_actif_id = pvId;
+        dmUser.pointDeVenteActifId = pvId;
+        localStorage.setItem("activePV", JSON.stringify({ id: pvId, nom: pvNom }));
+      }
+      localStorage.setItem("dmUser", JSON.stringify(dmUser));
+      localStorage.setItem("role", dmUser.role);
+      localStorage.setItem("activityType", etablissement);
+      localStorage.setItem("userCountry", countryCode);
+
+      setTimeout(() => {
+        navigate("/accueil");
+        window.location.reload();
+      }, 800);
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || err?.message || "Le serveur a refusé la requête.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Box sx={{ minHeight: "100vh", bgcolor: "#FFFFFF", py: { xs: 4, md: 8 } }}>
+      <Container maxWidth="sm">
+        {/* Header */}
+        <Box sx={{ textAlign: "center", mb: 3 }}>
+          <Box
+            component="img"
+            src="/logo.svg"
+            alt="DepotManager Logo"
+            sx={{ width: 56, height: 56, mb: 1.5 }}
+          />
+          <Typography variant="h4" sx={{ fontWeight: 800, color: "#6A1B9A", mb: 1 }}>
+            Configure ton bar 🍻
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Quelques étapes et tu es prêt à encaisser
+          </Typography>
+        </Box>
+
+        {/* Bandeau vidéo de démo */}
+        <Paper
+          onClick={openDemo}
+          sx={{
+            mb: 3,
+            p: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+            cursor: "pointer",
+            bgcolor: "#f3e5f5",
+            border: "1px solid #e1bee7",
+            borderRadius: 2,
+          }}
+        >
+          <PlayCircleIcon sx={{ fontSize: 40, color: "#6A1B9A" }} />
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#6A1B9A" }}>
+              🎬 Voir la démo (2 min)
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Comment utiliser votre caisse bar en vidéo
+            </Typography>
+          </Box>
+        </Paper>
+
+        {errorMsg && <Alert severity="error" sx={{ mb: 2 }}>{errorMsg}</Alert>}
+        {successMsg && <Alert severity="success" sx={{ mb: 2 }}>{successMsg}</Alert>}
+
+        <Card sx={{ borderRadius: 3, border: "1px solid #e0e0e0", boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+          <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+            <Box component="form" onSubmit={handleSubmit}>
+              <Stack spacing={2.5}>
+                {/* Pays */}
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1 }}>
+                    Pays
+                  </Typography>
+                  <Grid container spacing={1}>
+                    {getCountries().map((c) => (
+                      <Grid item xs={4} key={c.code}>
+                        <Card
+                          onClick={() => { setCountryCode(c.code); setTelephone(""); }}
+                          sx={{
+                            cursor: "pointer",
+                            textAlign: "center",
+                            p: 1,
+                            border: countryCode === c.code ? "2px solid #6A1B9A" : "2px solid #e0e0e0",
+                            bgcolor: countryCode === c.code ? "#f3e5f5" : "#fff",
+                            borderRadius: 2,
+                          }}
+                        >
+                          <Typography variant="h6" sx={{ mb: 0 }}>{c.flag}</Typography>
+                          <Typography variant="caption" sx={{ fontWeight: countryCode === c.code ? 800 : 500 }}>
+                            {c.name}
+                          </Typography>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+
+                {/* Nom du bar */}
+                <TextField
+                  fullWidth
+                  label="Nom du bar *"
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: <WineBarIcon fontSize="small" sx={{ mr: 1, color: "#6A1B9A" }} />,
+                  }}
+                />
+
+                {/* Téléphone */}
+                <TextField
+                  fullWidth
+                  label="Téléphone *"
+                  value={telephone}
+                  onChange={(e) => setTelephone(e.target.value)}
+                  required
+                  placeholder={country.phoneExample}
+                  InputProps={{
+                    startAdornment: <PhoneIcon fontSize="small" sx={{ mr: 1, color: "#6A1B9A" }} />,
+                  }}
+                />
+
+                {/* Adresse (optionnel) */}
+                <TextField
+                  fullWidth
+                  label="Quartier / repère *"
+                  value={adresse}
+                  onChange={(e) => setAdresse(e.target.value)}
+                  placeholder="Ex: Cocody, près du pont..."
+                  required
+                  InputProps={{
+                    startAdornment: <LocationOnIcon fontSize="small" sx={{ mr: 1, color: "#6A1B9A" }} />,
+                  }}
+                />
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  disabled={submitting}
+                  sx={{ bgcolor: "#6A1B9A", py: 1.5, fontWeight: 700, "&:hover": { bgcolor: "#7E57C2" } }}
+                >
+                  {submitting ? "Création en cours..." : "Créer mon bar"}
+                </Button>
+              </Stack>
+            </Box>
+          </CardContent>
+        </Card>
+      </Container>
+    </Box>
+  );
+}

@@ -49,25 +49,42 @@ export default function LoginClientMobile() {
         password: password
       });
 
+      const clientId = response.data.clientId || response.data.userId;
+      const passwordMustChange = response.data.passwordMustChange === true;
+      const dmUser = {
+        ...response.data,
+        role: 'CLIENT_BAR',
+        clientId,
+        userId: response.data.userId || clientId,
+        pointDeVenteActifId: response.data.pointDeVenteActifId ?? response.data.pointDeVenteActif?.id ?? null,
+        onboardingRequired: passwordMustChange,
+        onboardingCompleted: !passwordMustChange,
+      };
+
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('clientId', response.data.clientId);
+      localStorage.setItem('clientId', String(clientId));
       localStorage.setItem('phone', response.data.phone);
       localStorage.setItem('firstName', response.data.firstName);
       localStorage.setItem('role', 'CLIENT_BAR');
+      localStorage.setItem('dmUser', JSON.stringify(dmUser));
 
-      try {
-        const ctx = await privateApi.get('/api/utilisateur/context');
-        const pv = ctx.data?.pointDeVenteActif;
-        if (pv?.id) {
-          localStorage.setItem('activePV', JSON.stringify(pv));
-          localStorage.setItem('dmUser', JSON.stringify({ pointDeVenteActifId: pv.id, pointsDeVente: [pv] }));
-        }
-      } catch (e) {
-        console.warn('Contexte utilisateur non récupéré pour le client:', e?.message || e);
+      // Stocker le point de vente actif pour les clients
+      if (response.data.pointDeVenteActif) {
+        const pv = response.data.pointDeVenteActif;
+        localStorage.setItem('activePV', JSON.stringify({
+          id: pv.id,
+          nom: pv.nom,
+          code: pv.code || ''
+        }));
       }
 
       setAttemptCount(0);
-      navigate(getDefaultHomePageForRole('CLIENT_BAR'));
+
+      if (passwordMustChange) {
+        navigate('/set-password-client');
+      } else {
+        navigate(getDefaultHomePageForRole('CLIENT_BAR'));
+      }
 
     } catch (err) {
       setLoading(false);

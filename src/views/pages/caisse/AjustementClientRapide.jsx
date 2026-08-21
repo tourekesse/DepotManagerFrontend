@@ -36,19 +36,12 @@ import {
 } from '@mui/icons-material';
 import { privateApi } from '../../../api/axios';
 import useActivePointDeVenteId from '../../../hooks/useActivePointDeVenteId';
-
-const formatMontant = (montant) => {
-  if (!montant || isNaN(montant)) return '0 FCFA';
-  return new Intl.NumberFormat('fr-FR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(montant) + ' FCFA';
-};
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 // Composant de montant rapide
 const MontantRapideChip = ({ label, value, selected, onClick }) => (
   <Chip
-    label={`${label} (${formatMontant(value)})`}
+    label={`${label} (${formatCurrency(value)})`}
     onClick={onClick}
     variant={selected ? "filled" : "outlined"}
     color="primary"
@@ -242,7 +235,7 @@ export default function AjustementClientRapide() {
           const max = Math.abs(client?.montantLiquide || 0);
           return {
             valid: max > 0,
-            message: `Montant dépasse la dette liquide (${formatMontant(max)})`,
+            message: `Montant dépasse la dette liquide (${formatCurrency(max)})`,
             type: 'warning'
           };
         }
@@ -253,7 +246,7 @@ export default function AjustementClientRapide() {
           const max = Math.abs(client?.montantEmballage || 0);
           return {
             valid: max > 0,
-            message: `Montant dépasse la dette emballage (${formatMontant(max)})`,
+            message: `Montant dépasse la dette emballage (${formatCurrency(max)})`,
             type: 'warning'
           };
         }
@@ -264,7 +257,7 @@ export default function AjustementClientRapide() {
         if (montantNum > totalDette) {
           return {
             valid: totalDette > 0,
-            message: `Montant dépasse la dette totale (${formatMontant(totalDette)})`,
+            message: `Montant dépasse la dette totale (${formatCurrency(totalDette)})`,
             type: 'warning'
           };
         }
@@ -324,7 +317,7 @@ export default function AjustementClientRapide() {
         
       default:
         [1000, 5000, 10000, 20000, 50000].forEach(val => {
-          suggestions.push({ label: formatMontant(val), value: val });
+          suggestions.push({ label: formatCurrency(val), value: val });
         });
     }
     
@@ -380,7 +373,7 @@ export default function AjustementClientRapide() {
       const ajustementLiquide = operation.ajustementLiquide(montantNum, selectedClient);
       const ajustementEmballage = operation.ajustementEmballage(montantNum, selectedClient);
 
-      const libelle = `${operation.label.toUpperCase()} ${selectedClient.raisonsociale} - ${formatMontant(montantNum)}`;
+      const libelle = `${operation.label.toUpperCase()} ${selectedClient.raisonsociale} - ${formatCurrency(montantNum)}`;
 
       await privateApi.post('/api/caisse/ajuster-client', null, {
         params: {
@@ -555,7 +548,7 @@ export default function AjustementClientRapide() {
                       💰 Dette liquide
                     </Typography>
                     <Typography variant="h5" color="error" fontWeight="bold">
-                      {formatMontant(selectedClient.montantLiquide)}
+                      {formatCurrency(selectedClient.montantLiquide)}
                     </Typography>
                   </Box>
                 </Grid>
@@ -565,7 +558,7 @@ export default function AjustementClientRapide() {
                       📦 Dette emballage
                     </Typography>
                     <Typography variant="h5" color="warning.main" fontWeight="bold">
-                      {formatMontant(selectedClient.montantEmballage)}
+                      {formatCurrency(selectedClient.montantEmballage)}
                     </Typography>
                   </Box>
                 </Grid>
@@ -575,7 +568,7 @@ export default function AjustementClientRapide() {
                       💳 Total à recouvrer
                     </Typography>
                     <Typography variant="h5" fontWeight="bold">
-                      {formatMontant(totalDette)}
+                      {formatCurrency(totalDette)}
                     </Typography>
                     <StatutSolde 
                       liquide={selectedClient.montantLiquide} 
@@ -895,7 +888,7 @@ export default function AjustementClientRapide() {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                       <Typography variant="body2" sx={{ textDecoration: 'line-through', opacity: 0.7 }}>
-                        {formatMontant(selectedClient.montantLiquide)}
+                        {formatCurrency(selectedClient.montantLiquide)}
                       </Typography>
                       <Typography variant="body2">→</Typography>
                       <Typography 
@@ -903,7 +896,7 @@ export default function AjustementClientRapide() {
                         fontWeight="bold"
                         color={impact.nouveauLiquide < selectedClient.montantLiquide ? 'success.main' : 'error.main'}
                       >
-                        {formatMontant(impact.nouveauLiquide)}
+                        {formatCurrency(impact.nouveauLiquide)}
                       </Typography>
                     </Box>
                   </Box>
@@ -916,7 +909,7 @@ export default function AjustementClientRapide() {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                       <Typography variant="body2" sx={{ textDecoration: 'line-through', opacity: 0.7 }}>
-                        {formatMontant(selectedClient.montantEmballage)}
+                        {formatCurrency(selectedClient.montantEmballage)}
                       </Typography>
                       <Typography variant="body2">→</Typography>
                       <Typography 
@@ -924,7 +917,7 @@ export default function AjustementClientRapide() {
                         fontWeight="bold"
                         color={impact.nouveauEmballage < selectedClient.montantEmballage ? 'success.main' : 'error.main'}
                       >
-                        {formatMontant(impact.nouveauEmballage)}
+                        {formatCurrency(impact.nouveauEmballage)}
                       </Typography>
                     </Box>
                   </Box>
@@ -948,10 +941,10 @@ export default function AjustementClientRapide() {
                   <strong>Opération:</strong> {operation.label}
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  <strong>Montant:</strong> {formatMontant(parseFloat(montant))}
+                  <strong>Montant:</strong> {formatCurrency(parseFloat(montant))}
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  <strong>Impact caisse:</strong> {operation.caisseImpact === 'entrée' ? '➕ ENTRÉE' : '➖ SORTIE'} {formatMontant(parseFloat(montant))}
+                  <strong>Impact caisse:</strong> {operation.caisseImpact === 'entrée' ? '➕ ENTRÉE' : '➖ SORTIE'} {formatCurrency(parseFloat(montant))}
                 </Typography>
               </Alert>
             )}
@@ -1019,7 +1012,7 @@ export default function AjustementClientRapide() {
             <Box>
               <Typography variant="caption" color="text.secondary">Montant</Typography>
               <Typography variant="h4" fontWeight="bold" color={operation.color}>
-                {formatMontant(parseFloat(montant))}
+                {formatCurrency(parseFloat(montant))}
               </Typography>
             </Box>
 
@@ -1028,7 +1021,7 @@ export default function AjustementClientRapide() {
               severity={operation.caisseImpact === 'entrée' ? "success" : "warning"}
             >
               <Typography variant="body2">
-                <strong>Impact caisse:</strong> {operation.caisseImpact === 'entrée' ? '➕ ENTRÉE' : '➖ SORTIE'} {formatMontant(parseFloat(montant))}
+                <strong>Impact caisse:</strong> {operation.caisseImpact === 'entrée' ? '➕ ENTRÉE' : '➖ SORTIE'} {formatCurrency(parseFloat(montant))}
               </Typography>
             </Alert>
 
@@ -1046,10 +1039,10 @@ export default function AjustementClientRapide() {
                 ) : (
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
                     <Typography variant="body2">
-                      💰 Liquide: <strong>{formatMontant(impact.nouveauLiquide)}</strong>
+                      💰 Liquide: <strong>{formatCurrency(impact.nouveauLiquide)}</strong>
                     </Typography>
                     <Typography variant="body2">
-                      📦 Emballage: <strong>{formatMontant(impact.nouveauEmballage)}</strong>
+                      📦 Emballage: <strong>{formatCurrency(impact.nouveauEmballage)}</strong>
                     </Typography>
                   </Box>
                 )}

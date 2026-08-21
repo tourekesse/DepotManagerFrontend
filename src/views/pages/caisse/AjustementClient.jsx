@@ -46,14 +46,7 @@ import {
 } from '@mui/icons-material';
 import { privateApi } from '../../../api/axios';
 import useActivePointDeVenteId from '../../../hooks/useActivePointDeVenteId';
-
-const formatMontant = (montant) => {
-  if (!montant || isNaN(montant)) return '0 FCFA';
-  return new Intl.NumberFormat('fr-FR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(montant) + ' FCFA';
-};
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 export default function AjustementClient() {
   const navigate = useNavigate();
@@ -296,7 +289,7 @@ export default function AjustementClient() {
     if (!selectedClient || !montant) return '';
     
     const operation = operations[operationType];
-    const montantFormate = formatMontant(parseFloat(montant));
+    const montantFormate = formatCurrency(parseFloat(montant));
 
     switch (operationType) {
       case 'paiement':
@@ -587,7 +580,7 @@ export default function AjustementClient() {
                       </Box>
                       <Box sx={{ textAlign: 'right', ml: 2 }}>
                         <Typography variant="caption" color="error">
-                          Dette: {formatMontant(option.montantLiquide)}
+                          Dette: {formatCurrency(option.montantLiquide)}
                         </Typography>
                       </Box>
                     </Box>
@@ -626,7 +619,7 @@ export default function AjustementClient() {
                               Dette liquide
                             </Typography>
                             <Typography variant="h6" color="error">
-                              {formatMontant(selectedClient.montantLiquide)}
+                              {formatCurrency(selectedClient.montantLiquide)}
                             </Typography>
                           </Box>
                         </Box>
@@ -639,7 +632,7 @@ export default function AjustementClient() {
                               Dette emballage
                             </Typography>
                             <Typography variant="h6" color="warning.main">
-                              {formatMontant(selectedClient.montantEmballage)}
+                              {formatCurrency(selectedClient.montantEmballage)}
                             </Typography>
                           </Box>
                         </Box>
@@ -735,7 +728,7 @@ export default function AjustementClient() {
                         onChange={(e) => setMontantLiquideInput(e.target.value)}
                         variant="outlined"
                         size="small"
-                        helperText={`Disponible: ${formatMontant(selectedClient?.montantLiquide || 0)}`}
+                        helperText={`Disponible: ${formatCurrency(selectedClient?.montantLiquide || 0)}`}
                       />
                       <TextField
                         label="Sur la dette emballage"
@@ -745,7 +738,7 @@ export default function AjustementClient() {
                         onChange={(e) => setMontantEmballageInput(e.target.value)}
                         variant="outlined"
                         size="small"
-                        helperText={`Disponible: ${formatMontant(selectedClient?.montantEmballage || 0)}`}
+                        helperText={`Disponible: ${formatCurrency(selectedClient?.montantEmballage || 0)}`}
                       />
                     </Box>
                   )}
@@ -794,7 +787,7 @@ export default function AjustementClient() {
                             {operation.caisseImpact === 'entrée' ? '➕ ENTRÉE' : '➖ SORTIE'}
                           </Typography>
                           <Typography variant="h6">
-                            {formatMontant(parseFloat(montant))}
+                            {formatCurrency(parseFloat(montant))}
                           </Typography>
                         </Paper>
                       </Grid>
@@ -811,7 +804,7 @@ export default function AjustementClient() {
                                 <Box sx={{ mb: 1 }}>
                                   <Typography variant="caption">Liquide</Typography>
                                   <Typography variant="body1" fontWeight="bold">
-                                    {formatMontant(nouveauxSoldes.liquidePrevious)} → {formatMontant(nouveauxSoldes.liquideNew)}
+                                    {formatCurrency(nouveauxSoldes.liquidePrevious)} → {formatCurrency(nouveauxSoldes.liquideNew)}
                                   </Typography>
                                 </Box>
                               )}
@@ -819,7 +812,7 @@ export default function AjustementClient() {
                                 <Box>
                                   <Typography variant="caption">Emballage</Typography>
                                   <Typography variant="body1" fontWeight="bold">
-                                    {formatMontant(nouveauxSoldes.emballagePrevious)} → {formatMontant(nouveauxSoldes.emballageNew)}
+                                    {formatCurrency(nouveauxSoldes.emballagePrevious)} → {formatCurrency(nouveauxSoldes.emballageNew)}
                                   </Typography>
                                 </Box>
                               )}
@@ -916,7 +909,7 @@ export default function AjustementClient() {
             <Box>
               <Typography variant="caption" color="text.secondary">Montant</Typography>
               <Typography variant="h5" color={operation.color}>
-                {formatMontant(parseFloat(montant))}
+                {formatCurrency(parseFloat(montant))}
               </Typography>
             </Box>
 
@@ -924,7 +917,7 @@ export default function AjustementClient() {
 
             <Alert severity="info" icon={<AutoAwesome />}>
               <Typography variant="body2">
-                <strong>Impact caisse:</strong> {operation.caisseImpact === 'entrée' ? '➕ Entrée' : '➖ Sortie'} de {formatMontant(parseFloat(montant))}
+                <strong>Impact caisse:</strong> {operation.caisseImpact === 'entrée' ? '➕ Entrée' : '➖ Sortie'} de {formatCurrency(parseFloat(montant))}
               </Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 Cette opération sera enregistrée dans le journal de caisse

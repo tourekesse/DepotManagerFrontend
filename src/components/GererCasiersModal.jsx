@@ -10,12 +10,12 @@ import { getActivePointDeVenteId } from '../utils/pdv';
 
 const formatF = (n) => `${Number(n || 0).toLocaleString('fr-FR')} F`;
 
-const GererCasiersModal = ({ open, onClose, vente, ventesCasiers = [], onValidate, clientNom }) => {
+const GererCasiersModal = ({ open, onClose, vente, ventesCasiers = [], onValidate, clientNom, defaultCreditMode = false }) => {
   const [compensations, setCompensations] = useState([]);
   const [typeCasiers, setTypeCasiers] = useState([]);
   const [compType, setCompType] = useState('CASIER');
   const [montantEspeces, setMontantEspeces] = useState(0);
-  const [paiementRecu, setPaiementRecu] = useState(false);
+  const [paiementRecu, setPaiementRecu] = useState(!defaultCreditMode); // Par défaut en mode livraison : on considère qu'on ne reçoit rien en cash (le gérant peut quand même cocher manuellement)
   const [isFullReturn, setIsFullReturn] = useState(false); // État du retour complet
   const [feedbackMessage, setFeedbackMessage] = useState(''); // Message de feedback
 
@@ -36,7 +36,7 @@ const GererCasiersModal = ({ open, onClose, vente, ventesCasiers = [], onValidat
   useEffect(() => { 
     if (!open) { 
       setCompensations([]); 
-      setPaiementRecu(false); 
+      setPaiementRecu(!defaultCreditMode); 
       setIsFullReturn(false); // Réinitialiser l'état de retour complet
       setFeedbackMessage(''); // Réinitialiser le message de feedback
     } 
@@ -86,25 +86,25 @@ const GererCasiersModal = ({ open, onClose, vente, ventesCasiers = [], onValidat
            commentaire: `Retour casiers - Dette liquide - Commande #${id}`
          };
        } else if (paiementRecu && isFullReturn) {
-         // Cas 3: Tout est parfait (12 000 encaissé)
+         // Cas 3: Tout est parfait - Échange casiers (12 000 encaissé)
          payload = {
-           type: 'VENTE_CASH',
+           type: 'CASH_ECHANGE',
            montant: mtLiquide, // 12 000
            articlesLivres,
            manquants: [],
            compensations: [],
-           commentaire: 'Livraison conforme - Encaissement liquide'
+           commentaire: 'Livraison conforme - Échange casiers - Encaissement liquide'
          };
        } else {
-         // Cas par défaut: avec compensations
+         // Cas par défaut: avec compensations (échange partiel de casiers)
          payload = {
-           type: 'VENTE_CASH',
+           type: 'CASH_ECHANGE',
            montant: resteAEncaissementTotal,
            articlesLivres,
            compensations: compensations.map(c => c.type === 'ESPECES' ?
              { type: 'ESPECES', montant: Number(c.value) } :
              { type: 'CASIER', typeCasierId: Number(c.id), quantite: Number(c.qte) }),
-           commentaire: `Régul #${id} - Payé: ${paiementRecu}`
+           commentaire: `Régul #${id} - Payé: ${paiementRecu} - Échange casiers`
          };
        }
       
@@ -120,8 +120,14 @@ const GererCasiersModal = ({ open, onClose, vente, ventesCasiers = [], onValidat
       onValidate?.(); 
       setTimeout(() => onClose(), 1500); // Auto-fermeture après 1.5s pour voir le message
     } catch (e) { 
-      setFeedbackMessage('Erreur lors de la validation');
-      alert('Erreur'); 
+      const errorMsg = e.response?.data?.error || e.response?.data?.message || e.message || 'Erreur lors de la validation';
+      setFeedbackMessage(errorMsg);
+      // Afficher une alerte plus complète avec solution
+      if (errorMsg.includes("caisse") || errorMsg.includes("Caisse")) {
+        alert(`${errorMsg}\n\n👉 Solution: Allez dans le menu Caisse → Ouvrir la Caisse avant de valider la livraison.`);
+      } else {
+        alert(errorMsg);
+      }
     }
   };
 
@@ -241,7 +247,9 @@ const GererCasiersModal = ({ open, onClose, vente, ventesCasiers = [], onValidat
               size="small" 
               color="success" 
             />}
-            label={<Typography variant="caption" sx={{ fontWeight: 700 }}>Argent encaissé (Cash)</Typography>}
+            label={<Typography variant="caption" sx={{ fontWeight: 700 }}>
+              Argent encaissé (Cash)
+            </Typography>}
           />
         </Stack>
 

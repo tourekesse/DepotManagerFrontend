@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, CardContent, Typography } from "@mui/material";
+import { formatCurrency } from "../../utils/currencyUtils";
 
 export default function ProductCard({ produit }) {
   return (
@@ -14,7 +15,7 @@ export default function ProductCard({ produit }) {
         </Typography>
 
         <Typography variant="body2" sx={{ mt: 1 }}>
-          Prix vente : {produit.prixVenteHt} FCFA
+          Prix vente : {formatCurrency(produit.prixVenteHt)}
         </Typography>
       </CardContent>
     </Card>

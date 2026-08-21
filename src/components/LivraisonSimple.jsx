@@ -51,6 +51,12 @@ const ItemRow = ({ label, value, onDelete }) => (
   </Box>
 );
 
+ItemRow.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
 // ============================================
 // COMPOSANT AJOUT RAPIDE
 // ============================================
@@ -88,13 +94,23 @@ const AjoutRapide = ({ options, onAdd, label }) => {
       <Button
         variant="contained"
         size="small"
-        onClick={() => onAdd(selected, qte)}
+        onClick={() => {
+          onAdd(selected, qte);
+          setSelected('');
+          setQte(1);
+        }}
         sx={{ minWidth: 40 }}
       >
         <Add sx={{ fontSize: '0.9rem' }} />
       </Button>
     </Box>
   );
+};
+
+AjoutRapide.propTypes = {
+  options: PropTypes.array.isRequired,
+  onAdd: PropTypes.func.isRequired,
+  label: PropTypes.string.isRequired,
 };
 
 // ============================================
@@ -161,7 +177,7 @@ const LivraisonSimple = ({ livraison, onValidate, onClose }) => {
   };
 
   const ajouterCompensation = (typeId, qte) => {
-    if (compType === 'ESPECES') return; // handled by ajouterCompensationEspeces
+    if (compType === 'ESPECES') return;
     if (!typeId) return;
     const type = typeCasiers.find(t => String(t.id) === String(typeId));
     if (!type) return;
@@ -175,6 +191,9 @@ const LivraisonSimple = ({ livraison, onValidate, onClose }) => {
     setMontantEspeces(0);
   };
 
+  // =================================================================
+  // 1. ACTION : TOUT EST OK
+  // =================================================================
   const handleToutOk = async () => {
     try {
       const montantTotal = Number(livraison.montantTotal || livraison.totalGeneral || 0);
@@ -185,22 +204,23 @@ const LivraisonSimple = ({ livraison, onValidate, onClose }) => {
       const prixUnitaireEmballage = articles.find(a => a.prixUnitaireEmballage > 0)?.prixUnitaireEmballage || 0;
       
       if (clientARetourneTousCasiers) {
-        // Client a tous ses casiers : ne paie que les liquides (sans la consigne)
+        // Le client rend ses consignes : ne paie que le liquide
         montantPaye = montantTotal - montantEmballageTotal;
         casiersRendus = prixUnitaireEmballage > 0 
           ? Math.round(montantEmballageTotal / prixUnitaireEmballage)
           : 0;
       } else {
-        // Client n'a pas tous ses casiers : paie le montant total (avec la consigne)
+        // Le client ne rend pas ses consignes : paie la totalité
         montantPaye = montantTotal;
         casiersRendus = 0;
       }
       
       await onValidate({
-        venteId: livraison.id,
+        id: livraison.id,
+        typeVente: "VENTE_COMPTANT",
+        montant: montantPaye,
         casiersRendus: casiersRendus,
-        bouteillesRendues: 0,
-        montantPaye: montantPaye
+        bouteillesRendus: 0
       });
     } catch (error) {
       console.error('Erreur lors de la validation:', error);
@@ -208,33 +228,47 @@ const LivraisonSimple = ({ livraison, onValidate, onClose }) => {
     }
   };
 
+  // =================================================================
+  // 2. ACTION : BOUTON PROBLÈME (Saisie manuelle des vides)
+  // =================================================================
   const handleValiderProbleme = async () => {
+    // CORRECTION : Utilisation de c.qte au lieu de c.quantite pour éviter le bug du NaN
+    const totalCasiersRendus = compensations
+      .filter(c => c.type === 'CASIER')
+      .reduce((sum, c) => sum + Number(c.qte || 0), 0);
+
+    const totalBouteillesRendues = compensations
+      .filter(c => c.type === 'BOUTEILLE')
+      .reduce((sum, c) => sum + Number(c.qte || 0), 0);
+
+    const montantTotalCommande = Number(livraison.montantTotal || livraison.totalGeneral || 0);
+
     await onValidate({
-      venteId: livraison.id,
-      casiersRendus: compensations.filter(c => c.type === 'CASIER').reduce((sum, c) => sum + c.quantite, 0),
-      bouteillesRendues: compensations.filter(c => c.type === 'BOUTEILLE').reduce((sum, c) => sum + c.quantite, 0),
-      montantPaye: (livraison.montantTotal || livraison.totalGeneral || 0) + solde
+      id: livraison.id,
+      typeVente: "VENTE_COMPTANT",
+      montant: montantTotalCommande + solde, // Solde calculé (Manquants - Rendus)
+      casiersRendus: totalCasiersRendus,
+      bouteillesRendus: totalBouteillesRendues
     });
+    
     setOpen(false);
-    // Ne pas fermer ici - laisse le parent gérer
   };
 
+  // =================================================================
+  // 3. ACTION : VALIDER EN DETTE CLIENT
+  // =================================================================
   const handleValiderDetteClient = async () => {
     try {
       const montantTotal = Number(livraison.montantTotal || livraison.totalGeneral || 0);
       
       await onValidate({
-        venteId: livraison.id,
-        casiersRendus: 0, // Client ne rend aucun casier
-        bouteillesRendues: 0,
-        montantPaye: 0, // Gérant n'encaisse rien
-        modeValidation: 'DETTE_CLIENT' // Indicateur pour le backend
+        id: livraison.id,
+        typeVente: "VENTE_CREDIT", // Indique au backend d'activer le compte crédit
+        montant: montantTotal,
+        casiersRendus: 0,
+        bouteillesRendus: 0
       });
       
-      console.log('✅ Livraison validée en dette client:');
-      console.log('- Aucun casier rendu');
-      console.log('- Aucun encaissement effectué');
-      console.log('- Montant total mis en dette client:', formatF(montantTotal));
     } catch (error) {
       console.error('Erreur lors de la validation en dette client:', error);
       alert('Erreur lors de la validation en dette client');

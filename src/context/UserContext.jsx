@@ -4,11 +4,21 @@ import { privateApi } from '../api/axios';
 
 const UserContext = createContext();
 
+// Générer un session ID unique pour cette fenêtre
+const generateSessionId = () => {
+  return 'sess_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   // État pour stocker le point de vente sur lequel l'utilisateur travaille
   const [activePointDeVente, setActivePointDeVente] = useState(null);
+  // Identifiant de session unique pour cette fenêtre
+  const [sessionId] = useState(() => {
+    const stored = localStorage.getItem("sessionId");
+    return stored || generateSessionId();
+  });
 
   // 1. Restaurer la session au chargement de l'application
   useEffect(() => {
@@ -16,14 +26,37 @@ export const UserProvider = ({ children }) => {
     const storedPV = localStorage.getItem("activePV");
     
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
       setIsAuthenticated(true);
+      
+      // Si activePV absent, on le dérive depuis le dmUser
+      if (!storedPV) {
+        const derivedPV = deriveActivePV(userData);
+        if (derivedPV) {
+          setActivePointDeVente(derivedPV);
+          localStorage.setItem("activePV", JSON.stringify(derivedPV));
+        }
+      }
     }
     
     if (storedPV) {
       setActivePointDeVente(JSON.parse(storedPV));
     }
   }, []);
+
+  // Helper : dériver le point de vente actif depuis les données utilisateur
+  const deriveActivePV = (userData) => {
+    if (!userData) return null;
+    const id = userData.defaultPointDeVenteId || userData.default_point_de_vente_id;
+    const pvs = userData.pointsDeVente || userData.points_de_vente;
+    if (id && pvs) {
+      const found = pvs.find(pv => pv.id === id);
+      if (found) return found;
+    }
+    if (pvs && pvs.length > 0) return pvs[0];
+    return null;
+  };
 
   // 2. Fonction de Login améliorée
   const login = async (userData) => {
@@ -33,22 +66,42 @@ export const UserProvider = ({ children }) => {
     localStorage.setItem("dmUser", JSON.stringify(userData));
 
     // RECONNAISSANCE DU POINT DE VENTE ACTIF
-    // On utilise les données de ton log : defaultPointDeVenteId (ex: 215)
+    // Priorité: defaultPointDeVenteId > localStorage si valide > premier de la liste
+    let selectedPV = null;
+
     if (userData.pointsDeVente && userData.defaultPointDeVenteId) {
-      const activePV = userData.pointsDeVente.find(
+      selectedPV = userData.pointsDeVente.find(
         (pv) => pv.id === userData.defaultPointDeVenteId
       );
-      
-      if (activePV) {
-        setActivePointDeVente(activePV);
-        localStorage.setItem("activePV", JSON.stringify(activePV));
-        console.log("Système : Point de vente '" + activePV.nom + "' activé par défaut.");
+    }
+
+    if (!selectedPV) {
+      // Vérifier localStorage si valide
+      const storedPV = localStorage.getItem("activePV");
+      if (storedPV) {
+        try {
+          const parsedPV = JSON.parse(storedPV);
+          if (userData.pointsDeVente && userData.pointsDeVente.some(pv => pv.id === parsedPV.id)) {
+            selectedPV = parsedPV;
+          }
+        } catch (e) {
+          // Ignore invalid JSON
+        }
       }
-    } else if (userData.pointsDeVente && userData.pointsDeVente.length > 0) {
-      // Si pas de defaultId mais une liste existe, on prend le premier par défaut
-      const firstPV = userData.pointsDeVente[0];
-      setActivePointDeVente(firstPV);
-      localStorage.setItem("activePV", JSON.stringify(firstPV));
+    }
+
+    if (!selectedPV && userData.pointsDeVente && userData.pointsDeVente.length > 0) {
+      // Sinon, prendre le premier
+      selectedPV = userData.pointsDeVente[0];
+    }
+
+    if (selectedPV) {
+      setActivePointDeVente(selectedPV);
+      localStorage.setItem("activePV", JSON.stringify(selectedPV));
+      console.log("Système : Point de vente '" + selectedPV.nom + "' activé.");
+    } else {
+      setActivePointDeVente(null);
+      localStorage.removeItem("activePV");
     }
 
     // Enregistrement du pushToken Firebase
@@ -74,6 +127,11 @@ export const UserProvider = ({ children }) => {
     localStorage.setItem("activePV", JSON.stringify(pvData));
   };
 
+  // Sauvegarder le sessionId
+  useEffect(() => {
+    localStorage.setItem("sessionId", sessionId);
+  }, [sessionId]);
+
   // 4. Déconnexion
   const logout = () => {
     setUser(null);
@@ -81,6 +139,18 @@ export const UserProvider = ({ children }) => {
     setActivePointDeVente(null);
     localStorage.removeItem("dmUser");
     localStorage.removeItem("activePV");
+    localStorage.removeItem("sessionId");
+  };
+
+  // Fonction helper pour obtenir le nom d'affichage
+  const getDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user?.firstName) {
+      return user.firstName;
+    }
+    return user?.phone || user?.email || "Utilisateur";
   };
 
   return (
@@ -88,10 +158,12 @@ export const UserProvider = ({ children }) => {
       user, 
       isAuthenticated, 
       activePointDeVente, // Très important pour tes formulaires
+      sessionId,
       login, 
       logout,
       selectPointDeVente,
-      setUser 
+      setUser,
+      getDisplayName
     }}>
       {children}
     </UserContext.Provider>

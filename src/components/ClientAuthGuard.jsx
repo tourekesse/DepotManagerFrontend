@@ -26,8 +26,12 @@ export default function ClientAuthGuard({ children }) {
     const token = localStorage.getItem('token');
     const clientId = localStorage.getItem('clientId');
     const phone = localStorage.getItem('phone');
+    const userId = localStorage.getItem('userId');
 
-    if (!token || !clientId || !phone) {
+    // Accepter clientId OU userId comme authentification valide
+    const hasValidAuth = token && ((clientId && phone) || userId);
+
+    if (!hasValidAuth) {
       // Pas authentifié → rediriger
       navigate('/login-client', { replace: true });
       setIsAuthenticated(false);

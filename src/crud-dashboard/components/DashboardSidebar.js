@@ -14,6 +14,7 @@ import Toolbar from '@mui/material/Toolbar';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 import { matchPath, useLocation } from 'react-router-dom';
 
@@ -104,10 +105,11 @@ function DashboardSidebar({
         'Mes casiers': <Inventory2Icon />,
         'Mes livraisons': <LocalShippingIcon />,
         Livraisons: <LocalShippingIcon />,
-        Livreurs: <LocalShippingIcon />,
+        Collaborateurs: <LocalShippingIcon />,
         Caisse: <AccountBalanceWalletIcon />,
         Ventes: <ShoppingCartIcon />,
         Historique: <LocalShippingIcon />,
+        'Centre d\'aide': <HelpOutlineIcon />,
       };
 
       return (
@@ -145,6 +147,16 @@ function DashboardSidebar({
                   selected={!!matchPath(item.path + '/*', pathname) || pathname === item.path}
                 />
               ))}
+
+              {/* Centre d'aide - toujours visible */}
+              <DashboardSidebarPageItem
+                key="documentation"
+                id="documentation"
+                title="Centre d'aide"
+                icon={<HelpOutlineIcon />}
+                href="/accueil/documentation"
+                selected={!!matchPath('/accueil/documentation/*', pathname) || pathname === '/accueil/documentation'}
+              />
             </List>
           </Box>
         </>

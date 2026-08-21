@@ -14,6 +14,7 @@ import PageContainer from '../../../crud-dashboard/components/PageContainer';
 import useNotifications from '../../../crud-dashboard/hooks/useNotifications/useNotifications';
 import { fetchProduitsByPointDeVente, deleteProduit } from '../../../api/produitsApi';
 import { useUser } from '../../../context/UserContext';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 export default function ProductList() {
   const navigate = useNavigate();
@@ -68,7 +69,7 @@ export default function ProductList() {
       headerAlign: 'right',
       valueFormatter: (params) => {
         const val = typeof params === 'object' ? params.value : params;
-        return `${parseFloat(val || 0).toLocaleString('fr-FR')} FCFA`;
+        return formatCurrency(val);
       }
     },
     { 
@@ -79,7 +80,7 @@ export default function ProductList() {
       headerAlign: 'right',
       valueFormatter: (params) => {
         const val = typeof params === 'object' ? params.value : params;
-        return `${parseFloat(val || 0).toLocaleString('fr-FR')} FCFA`;
+        return formatCurrency(val);
       }
     },
     { 
@@ -120,7 +121,7 @@ export default function ProductList() {
             <Grid container spacing={1}>
               <Grid item xs={6}>
                 <Typography variant="caption" color="textSecondary">Prix Vente</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>{parseFloat(row.prixVenteHt || 0).toLocaleString('fr-FR')} FCFA</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatCurrency(row.prixVenteHt)}</Typography>
               </Grid>
               <Grid item xs={6} sx={{ textAlign: 'right' }}>
                 <Typography variant="caption" color="textSecondary">Stock</Typography>

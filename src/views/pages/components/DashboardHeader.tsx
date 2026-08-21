@@ -9,8 +9,12 @@ import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
+import Badge from '@mui/material/Badge';
+import CircleIcon from '@mui/icons-material/Circle';
 import { Link } from 'react-router';
 import ThemeSwitcher from './ThemeSwitcher';
+import { useUser } from '../../../context/UserContext';
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   borderWidth: 0,
@@ -45,6 +49,7 @@ export default function DashboardHeader({
   onToggleMenu,
 }: DashboardHeaderProps) {
   const theme = useTheme();
+  const { user, getDisplayName, sessionId, activePointDeVente } = useUser();
 
   const handleMenuOpen = React.useCallback(() => {
     onToggleMenu(!menuOpen);
@@ -115,6 +120,35 @@ export default function DashboardHeader({
             spacing={1}
             sx={{ marginLeft: 'auto' }}
           >
+            {/* Info utilisateur connecté */}
+            {user && (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Chip
+                  size="small"
+                  icon={<CircleIcon fontSize="small" sx={{ color: 'success.main' }} />}
+                  label={getDisplayName()}
+                  variant="outlined"
+                  title={`Session: ${sessionId?.substring(0, 8)}...`}
+                  sx={{ 
+                    display: { xs: 'none', sm: 'flex' },
+                    borderColor: 'primary.main',
+                    color: 'primary.main'
+                  }}
+                />
+                {activePointDeVente && (
+                  <Chip
+                    size="small"
+                    label={activePointDeVente.nom}
+                    variant="filled"
+                    color="primary"
+                    sx={{ 
+                      display: { xs: 'none', md: 'flex' },
+                      fontSize: '0.75rem'
+                    }}
+                  />
+                )}
+              </Stack>
+            )}
             <Stack direction="row" alignItems="center">
               <ThemeSwitcher />
             </Stack>

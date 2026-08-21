@@ -78,9 +78,9 @@ export default function Sidebar({ className }) {
           <span>Personnel</span>
         </Link>
 
-        <Link to="/accueil/livreurs" className={`sidebar-item ${isActive("/accueil/livreurs")}`}>
+        <Link to="/accueil/utilisateur" className={`sidebar-item ${isActive("/accueil/utilisateur")}`}>
           <i className="pi pi-truck"></i>
-          <span>Livreurs</span>
+          <span>Utilisateurs</span>
         </Link>
 
       </nav>

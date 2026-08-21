@@ -8,6 +8,7 @@ import { Card } from "primereact/card";
 import { CFormInput, CFormLabel, CRow, CCol } from "@coreui/react";
 import { createProduit } from "../../api/produitsApi";
 import { safeProductFields } from "../../utils/productGuards";
+import { formatCurrency } from "../../utils/currencyUtils";
 
 export default function RechercheAjoutGroupe() {
     const [query, setQuery] = useState("");
@@ -133,7 +134,7 @@ export default function RechercheAjoutGroupe() {
                                             </CCol>
 
                                             <CCol xs={12} className="text-center p-2 bg-white border rounded">
-                                                <small>Prix Nu Total : <strong>{(Number(data.consigneBouteille) * ref.casierBouteilles) + Number(data.consigneCasier)} FCFA</strong></small>
+                                                <small>Prix Nu Total : <strong>{formatCurrency((Number(data.consigneBouteille) * ref.casierBouteilles) + Number(data.consigneCasier))}</strong></small>
                                             </CCol>
 
                                             <CCol xs={12} className="small fw-bold text-muted border-bottom mt-3">INVENTAIRE</CCol>

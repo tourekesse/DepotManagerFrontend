@@ -4,6 +4,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useUser } from "../../../context/UserContext";
 import { getDefaultHomePageForRole } from "../../../config/roleConfig";
 import { sendOTP, verifyOTP, resetRecaptcha } from "../../../utils/firebaseAuth";
+import { getUserCountry } from "../../../config/countries";
+import { formatPhoneDisplay, normalizePhoneInternational, validatePhone as validatePhoneUtil, getPhoneExample } from "../../../utils/phoneUtils";
 
 import {
   Box,
@@ -34,6 +36,7 @@ import {
 const steps = ["Téléphone", "Code OTP"];
 
 export default function LoginOtpPage() {
+  const userCountry = getUserCountry();
   const [step, setStep] = useState(0);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
@@ -49,21 +52,26 @@ export default function LoginOtpPage() {
   const formatPhone = (value) => {
     const digits = value.replace(/\D/g, "");
     if (digits.length === 0) return "";
-    if (digits.length <= 3) return `+${digits}`;
-    if (digits.length <= 5) return `+${digits.slice(0, 3)} ${digits.slice(3)}`;
-    if (digits.length <= 7) return `+${digits.slice(0, 3)} ${digits.slice(3, 5)} ${digits.slice(5)}`;
-    if (digits.length <= 9) return `+${digits.slice(0, 3)} ${digits.slice(3, 5)} ${digits.slice(5, 7)} ${digits.slice(7)}`;
-    return `+${digits.slice(0, 3)} ${digits.slice(3, 5)} ${digits.slice(5, 7)} ${digits.slice(7, 9)} ${digits.slice(9, 13)}`;
+    const dialDigits = userCountry.dialCode.replace("+", "");
+    const countryDigits = userCountry.phoneDigits;
+    if (digits.length <= dialDigits.length) return `+${digits}`;
+    const local = digits.slice(dialDigits.length);
+    if (local.length === 0) return `+${dialDigits}`;
+    const countryPart = local.slice(0, countryDigits);
+    if (countryPart.length <= 2) return `+${dialDigits} ${countryPart}`;
+    if (countryPart.length <= 4) return `+${dialDigits} ${countryPart.slice(0, 2)} ${countryPart.slice(2)}`;
+    if (countryPart.length <= 6) return `+${dialDigits} ${countryPart.slice(0, 2)} ${countryPart.slice(2, 4)} ${countryPart.slice(4)}`;
+    if (countryPart.length <= 8) return `+${dialDigits} ${countryPart.slice(0, 2)} ${countryPart.slice(2, 4)} ${countryPart.slice(4, 6)} ${countryPart.slice(6)}`;
+    return `+${dialDigits} ${countryPart.slice(0, 2)} ${countryPart.slice(2, 4)} ${countryPart.slice(4, 6)} ${countryPart.slice(6, 8)} ${countryPart.slice(8, countryDigits)}`;
   };
 
   const normalizePhone = (value) => {
-    return "+" + value.replace(/\D/g, "");
+    return normalizePhoneInternational(value, userCountry.code);
   };
 
   const validatePhone = (phoneValue) => {
-    const digits = phoneValue.replace(/\D/g, "");
-    if (digits.length < 8) {
-      setPhoneError("Numéro de téléphone incomplet");
+    if (!validatePhoneUtil(phoneValue, userCountry.code)) {
+      setPhoneError(`Numéro de téléphone incomplet (${userCountry.phoneDigits} chiffres requis)`);
       return false;
     }
     setPhoneError("");
@@ -133,6 +141,9 @@ export default function LoginOtpPage() {
         if (loginRes.data.success) {
           const apiResponse = loginRes.data;
           localStorage.setItem("token", apiResponse.token);
+          if (apiResponse.clientId) {
+            localStorage.setItem("clientId", apiResponse.clientId);
+          }
 
           const mappedUser = {
             ...apiResponse,
@@ -336,7 +347,7 @@ export default function LoginOtpPage() {
                       onChange={handlePhoneChange}
                       disabled={loading}
                       error={!!phoneError}
-                      helperText={phoneError || "Ex: +225 07 08 40 40 50"}
+                      helperText={phoneError || `Ex: ${getPhoneExample(userCountry.code)}`}
                       sx={{ mb: 3 }}
                       inputProps={{ maxLength: 20 }}
                       InputProps={{
@@ -346,7 +357,7 @@ export default function LoginOtpPage() {
                           </InputAdornment>
                         ),
                       }}
-                      placeholder="+225 07 08 40 40 50"
+                      placeholder={getPhoneExample(userCountry.code)}
                     />
 
                     <Button

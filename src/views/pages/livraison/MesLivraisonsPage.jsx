@@ -1,15 +1,17 @@
 import * as React from 'react';
 import {
   Box, Button, IconButton, Stack, Tooltip, Alert,
-  useTheme, useMediaQuery, Card, CardContent, Typography, Divider, Grid
+  useTheme, useMediaQuery, Card, CardContent, Typography, Divider, Grid,
+  Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
+  Table, TableBody, TableCell, TableHead, TableRow, Paper, Chip
 } from '@mui/material';
-import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
-import PrintIcon from '@mui/icons-material/Print';
-import BrokenImageIcon from '@mui/icons-material/BrokenImage';
-import { useNavigate } from 'react-router-dom';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import PhoneIcon from '@mui/icons-material/Phone';
+import PlaceIcon from '@mui/icons-material/Place';
 import PageContainer from '../../../crud-dashboard/components/PageContainer';
 import useNotifications from '../../../crud-dashboard/hooks/useNotifications/useNotifications';
 import { privateApi } from '../../../api/axios';
@@ -20,9 +22,135 @@ import LivreurCasiersModal from '../../../components/LivreurCasiersModal';
 import PrintReceiptButton from '../../../components/PrintReceiptButton';
 import { formatDateCI } from '../../../utils/dateUtils';
 import { useUser } from '../../../context/UserContext';
+import { formatCurrency } from '../../../utils/currencyUtils';
+
+function getArticleName(article) {
+  return article?.nomProduit
+    || article?.designation
+    || article?.produitNom
+    || article?.produit?.nomProduit
+    || article?.produit?.designation
+    || 'Produit';
+}
+
+function getDetailArticles(detail) {
+  if (!detail) return [];
+  return detail.details || detail.articles || detail.lignes || [];
+}
+
+function CommandeDetailsDialog({ open, onClose, detail, loading, error }) {
+  const articles = getDetailArticles(detail);
+  const telephone = detail?.telephoneClient || detail?.client?.telephone || '';
+  const adresse = detail?.adresseClient || detail?.adresse || detail?.client?.adresse || '';
+  const mapsUrl = detail?.latitudeClient && detail?.longitudeClient
+    ? `https://www.google.com/maps?q=${detail.latitudeClient},${detail.longitudeClient}`
+    : null;
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle sx={{ fontWeight: 800 }}>
+        Détails commande #{detail?.id || ''}
+      </DialogTitle>
+      <DialogContent dividers>
+        {loading ? (
+          <Stack alignItems="center" spacing={2} sx={{ py: 5 }}>
+            <CircularProgress />
+            <Typography variant="body2" color="text.secondary">Chargement des détails...</Typography>
+          </Stack>
+        ) : error ? (
+          <Alert severity="error">{error}</Alert>
+        ) : (
+          <Stack spacing={2.5}>
+            <Grid container spacing={1.5}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Client</Typography>
+                <Typography variant="body1" fontWeight={700}>{detail?.nomClient || 'Client'}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Montant total</Typography>
+                <Typography variant="body1" fontWeight={700}>{formatCurrency(detail?.montantTotal)}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Téléphone</Typography>
+                <Stack direction="row" spacing={0.75} alignItems="center">
+                  <PhoneIcon sx={{ fontSize: 17, color: 'text.secondary' }} />
+                  <Typography variant="body2" fontWeight={600}>{telephone || 'Non renseigné'}</Typography>
+                </Stack>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Emballages</Typography>
+                <Typography variant="body2" fontWeight={600}>{formatCurrency(detail?.montantEmballage)}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary">Adresse</Typography>
+                <Stack direction="row" spacing={0.75} alignItems="flex-start">
+                  <PlaceIcon sx={{ fontSize: 18, color: 'text.secondary', mt: 0.2 }} />
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>{adresse || 'Non renseignée'}</Typography>
+                    {mapsUrl && (
+                      <Button
+                        size="small"
+                        href={mapsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        sx={{ px: 0, minWidth: 0 }}
+                      >
+                        Ouvrir la position
+                      </Button>
+                    )}
+                  </Box>
+                </Stack>
+              </Grid>
+            </Grid>
+
+            <Divider />
+
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography variant="subtitle1" fontWeight={800}>Produits à livrer</Typography>
+              <Chip size="small" label={`${articles.length} article${articles.length > 1 ? 's' : ''}`} />
+            </Stack>
+
+            <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Produit</TableCell>
+                    <TableCell align="right">Quantité</TableCell>
+                    <TableCell align="right">Prix unitaire</TableCell>
+                    <TableCell align="right">Emballage</TableCell>
+                    <TableCell align="right">Total</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {articles.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5}>
+                        <Typography variant="body2" color="text.secondary">Aucun article trouvé.</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : articles.map((article, index) => (
+                    <TableRow key={`${article.produitId || index}-${index}`}>
+                      <TableCell>{getArticleName(article)}</TableCell>
+                      <TableCell align="right">{Number(article.quantite || 0).toLocaleString('fr-FR')}</TableCell>
+                      <TableCell align="right">{formatCurrency(article.prixUnitaire)}</TableCell>
+                      <TableCell align="right">{formatCurrency(article.consigneCasier || article.prixUnitaireEmballage)}</TableCell>
+                      <TableCell align="right">{formatCurrency(article.prixTotal || article.montantTotal)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+          </Stack>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Fermer</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 export default function MesLivraisonsPage() {
-  const navigate = useNavigate();
   const notifications = useNotifications();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -48,6 +176,10 @@ export default function MesLivraisonsPage() {
   const [selectedVenteForCasiers, setSelectedVenteForCasiers] = React.useState(null);
   const [ventesCasiers, setVentesCasiers] = React.useState([]);
   const [clientNomForCasiers, setClientNomForCasiers] = React.useState('');
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const [selectedCommandeDetail, setSelectedCommandeDetail] = React.useState(null);
+  const [detailsLoading, setDetailsLoading] = React.useState(false);
+  const [detailsError, setDetailsError] = React.useState('');
 
   const loadData = React.useCallback(async () => {
     if (!activePointDeVente?.id) {
@@ -93,27 +225,31 @@ export default function MesLivraisonsPage() {
   const [otpModalOpen, setOtpModalOpen] = React.useState(false);
   const [venteEnCoursValidation, setVenteEnCoursValidation] = React.useState(null);
 
-  const handleValidate = async (row) => {
+  const handleValidate = (row) => {
+    setSelectedVente(row);
+    setStepperOpen(true);
+  };
+
+  const handleOpenDetails = async (row) => {
+    setDetailsOpen(true);
+    setSelectedCommandeDetail({ ...row, id: row.id });
+    setDetailsLoading(true);
+    setDetailsError('');
     try {
-      // Fetch full command details with articles before opening stepper
       const res = await privateApi.get(`/api/commandes-mobile/${row.id}/details`);
-      const commandeDetails = res.data;
-      
-      // Merge row data with full command details (including articles/details)
-      const venteComplete = {
-        ...row,
-        ...commandeDetails,
-        // Ensure articles/details are available for LivraisonSimple
-        details: commandeDetails.details || commandeDetails.articles || [],
-        articles: commandeDetails.details || commandeDetails.articles || []
-      };
-      
-      setSelectedVente(venteComplete);
-      setStepperOpen(true);
-    } catch (error) {
-      console.error('Erreur chargement détails commande:', error);
-      notifications.show('Erreur de chargement des détails de la commande', { severity: 'error' });
+      setSelectedCommandeDetail(res.data || row);
+    } catch (e) {
+      console.error('Erreur chargement détails commande:', e);
+      setDetailsError("Impossible de charger les détails de cette commande.");
+    } finally {
+      setDetailsLoading(false);
     }
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsOpen(false);
+    setSelectedCommandeDetail(null);
+    setDetailsError('');
   };
 
   // Ouvrir la gestion des casiers (différent pour livreur vs gérant)
@@ -241,7 +377,7 @@ export default function MesLivraisonsPage() {
       field: 'totalGeneral',
       headerName: 'Montant',
       width: 110,
-      renderCell: (params) => params.value ? parseFloat(params.value).toLocaleString('fr-FR') + ' FCFA' : ''
+      renderCell: (params) => params.value ? formatCurrency(params.value) : ''
     },
     {
       field: 'statutLivraison',
@@ -254,60 +390,33 @@ export default function MesLivraisonsPage() {
       }
     },
     {
-      field: 'casse',
-      headerName: 'Casse',
-      width: 90,
-      renderCell: (params) => {
-        const nb = params.row.nbCasses || 0;
-        if (nb > 0) {
-          return (
-            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: 'error.main' }}>
-              <BrokenImageIcon sx={{ fontSize: 18 }} />
-              <Typography variant="caption" sx={{ fontWeight: 700 }}>{nb}</Typography>
-            </Stack>
-          );
-        }
-        return null;
-      }
-    },
-    {
       field: 'actions',
-      type: 'actions',
-      width: 200,
-      getActions: ({ row }) => {
-        const actions = [];
-
-        // Action de validation pour les livreurs (commandes non livrées)
-        if (isLivreur && row.statutLivraison === 'NON_LIVREE') {
-          actions.push(
-            <GridActionsCellItem
-              icon={<LocalShippingIcon />}
-              label="Envoyer code de confirmation"
-              onClick={() => handleValidate(row)}
-              color="primary"
-            />
-          );
-        }
-
-        // Action de gestion des casiers pour les livreurs ET gérants
-        if (isLivreur || isGerant) {
-          actions.push(
-            <GridActionsCellItem
-              icon={<Inventory2Icon />}
-              label="Gérer casiers"
-              onClick={() => handleOpenCasiers(row)}
-              color="secondary"
-              title="Gérer les casiers/vides rendus"
-            />
-          );
-        }
-
-        // Action d'impression
-        if (isLivreur || isGerant) {
-          actions.push(<PrintReceiptButton venteId={row.id} size="small" />);
-        }
-
-        return actions;
+      headerName: 'Actions',
+      width: 310,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        const row = params.row;
+        return (
+          <Stack direction="row" spacing={0.75} alignItems="center">
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<VisibilityIcon />}
+              onClick={() => handleOpenDetails(row)}
+            >
+              Voir détails
+            </Button>
+            {(isLivreur || isGerant) && (
+              <Tooltip title="Gérer les casiers/vides rendus">
+                <IconButton size="small" color="secondary" onClick={() => handleOpenCasiers(row)}>
+                  <Inventory2Icon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {(isLivreur || isGerant) && <PrintReceiptButton venteId={row.id} size="small" />}
+          </Stack>
+        );
       },
     },
   ];
@@ -341,11 +450,6 @@ export default function MesLivraisonsPage() {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Livraison #{row.id}</Typography>
                       <Box>
-                        {isLivreur && row.statutLivraison === 'NON_LIVREE' && (
-                          <IconButton size="small" color="primary" onClick={() => handleValidate(row)} title="Envoyer code de confirmation">
-                            <LocalShippingIcon fontSize="small" />
-                          </IconButton>
-                        )}
                         {(isLivreur || isGerant) && (
                           <IconButton 
                             size="small" 
@@ -364,13 +468,6 @@ export default function MesLivraisonsPage() {
                       </Box>
                     </Box>
                     <Divider sx={{ my: 1 }} />
-                    {row.nbCasses > 0 && (
-                      <Alert severity="error" sx={{ mb: 1, py: 0.25 }} icon={<BrokenImageIcon />}>
-                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                          ⚠️ {row.nbCasses} casse(s) déclarée(s)
-                        </Typography>
-                      </Alert>
-                    )}
                     <Grid container spacing={1}>
                       <Grid item xs={6}>
                         <Typography variant="caption" color="textSecondary">Client</Typography>
@@ -378,7 +475,7 @@ export default function MesLivraisonsPage() {
                       </Grid>
                       <Grid item xs={6} sx={{ textAlign: 'right' }}>
                         <Typography variant="caption" color="textSecondary">Montant</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{parseFloat(row.totalGeneral || 0).toLocaleString('fr-FR')} FCFA</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatCurrency(row.totalGeneral)}</Typography>
                       </Grid>
                       <Grid item xs={12}>
                         <Typography variant="caption" color="textSecondary">Date</Typography>
@@ -387,6 +484,18 @@ export default function MesLivraisonsPage() {
                       <Grid item xs={12}>
                         <Typography variant="caption" color="textSecondary">Statut</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.statutCommande || row.statutLivraison}</Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Button
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          startIcon={<VisibilityIcon />}
+                          onClick={() => handleOpenDetails(row)}
+                          sx={{ mt: 1 }}
+                        >
+                          Voir détails
+                        </Button>
                       </Grid>
                     </Grid>
                   </CardContent>
@@ -462,6 +571,13 @@ export default function MesLivraisonsPage() {
           ventesCasiers={ventesCasiers}
         />
       )}
+      <CommandeDetailsDialog
+        open={detailsOpen}
+        onClose={handleCloseDetails}
+        detail={selectedCommandeDetail}
+        loading={detailsLoading}
+        error={detailsError}
+      />
     </>
   );
 }

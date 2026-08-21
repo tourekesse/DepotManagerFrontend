@@ -1,0 +1,17 @@
+{
+  "name": "depotmanager-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Script Playwright E2E pour la demo DepotManager (HD 1280x720).",
+  "scripts": {
+    "playwright:install": "playwright install chromium",
+    "demo": "playwright test --reporter=line",
+    "demo:headed": "playwright test --headed --reporter=line"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.6.2"
+  }
+}

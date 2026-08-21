@@ -75,8 +75,8 @@ const VAPID_KEY = 'BJEB7F2gGSx80pIc6HKpuKJoLd-6TvI-aN4ha-JqAVc11O232aNikxl3Jpy2V
 // (supprimé : déclaration en double de VAPID_KEY)
 
 const formatF = (n) => `${Number(n || 0).toLocaleString("fr-FR")} F`;
-const clampInt = (v, min = 1) => {
-  const x = parseInt(String(v ?? ""), 10);
+const clamp = (v, min = 1) => {
+  const x = parseFloat(String(v ?? ""));
   if (Number.isNaN(x)) return min;
   return Math.max(min, x);
 };
@@ -106,7 +106,7 @@ const ProduitRow = ({ boisson, quantite, setQuantite, onAdd, isAdding }) => {
       setQuantite(1);
       setTempQty('1');
     } else {
-      const clamped = clampInt(val, 1);
+      const clamped = clamp(val, 1);
       setQuantite(clamped);
       setTempQty(String(clamped));
     }
@@ -114,8 +114,8 @@ const ProduitRow = ({ boisson, quantite, setQuantite, onAdd, isAdding }) => {
 
   const handleChange = (e) => {
     const val = e.target.value;
-    // Allow only empty string or digits
-    if (val === '' || /^\d+$/.test(val)) {
+    // Allow empty string, digits, or decimal numbers like 0.5, 1.5, 3.5
+    if (val === '' || /^\d+(\.\d{0,2})?$/.test(val)) {
       setTempQty(val);
     }
   };
@@ -172,8 +172,8 @@ const ProduitRow = ({ boisson, quantite, setQuantite, onAdd, isAdding }) => {
           onFocus={(e) => e.target.select()}
           size="small"
           inputProps={{
-            inputMode: "numeric",
-            pattern: "[0-9]*",
+            inputMode: "decimal",
+            pattern: "[0-9]*(\\.[0-9]{0,2})?",
             style: { textAlign: "center" }
           }}
           sx={{
@@ -538,7 +538,6 @@ const BoissonApp = () => {
 
       if (!res.ok) throw new Error(await res.text());
       
-      // Recharger le panier depuis la base
       await chargerPanierDepuisBase();
       
       // Animation eBay style
@@ -616,16 +615,18 @@ const BoissonApp = () => {
     }
   };
 
-  const modifierQuantitePanier = async (itemId, delta) => {
+  const modifierQuantitePanier = async (itemOrId, delta) => {
     const token = getToken();
     if (!token) return;
 
     try {
-      // Récupérer l'item actuel pour connaître sa quantité
-      const currentItem = cart.find(item => (item.id || item.produit_id) === itemId);
+      const itemId = typeof itemOrId === 'object' ? itemOrId.id : itemOrId;
+      const currentItem = typeof itemOrId === 'object'
+        ? itemOrId
+        : cart.find(item => Number(item.id || item.produit_id) === Number(itemId));
       if (!currentItem) return;
 
-      const nouvelleQuantite = currentItem.quantite + delta;
+      const nouvelleQuantite = Number(currentItem.quantite || 0) + delta;
       
       if (nouvelleQuantite <= 0) {
         // Supprimer l'item si quantité = 0
@@ -641,11 +642,20 @@ const BoissonApp = () => {
         },
         body: JSON.stringify({
           itemId: itemId,
+          produitId: currentItem.produit_id || currentItem.produitId,
+          clientId: clientSelectionne?.id,
+          pointVenteId: pvId,
           quantite: nouvelleQuantite
         })
       });
 
       if (!res.ok) throw new Error(await res.text());
+
+      setCart(prev => prev.map(item =>
+        Number(item.id) === Number(itemId)
+          ? { ...item, quantite: nouvelleQuantite, montant_total: Number(item.prix_unitaire || item.prix || 0) * nouvelleQuantite }
+          : item
+      ));
       
       await chargerPanierDepuisBase();
       
@@ -689,9 +699,13 @@ const BoissonApp = () => {
   /* =========================
    CHARGEMENT AUTOMATIQUE DU PANIER
   ========================= */
+  // Ne pas charger le panier au montage pour une nouvelle commande
+  // Le panier sera chargé uniquement si on veut reprendre une vente existante
+  // Pour /accueil/commandes/nouveau, on commence avec un panier vierge
   useEffect(() => {
-    chargerPanierDepuisBase();
-  }, [chargerPanierDepuisBase]);
+    // Ligne supprimée: chargerPanierDepuisBase() 
+    // pour une nouvelle commande, on garde le panier vide
+  }, []); // Sans dépendance - s'exécute une seule fois au montage
 
   /* =========================
    LIVREUR: CRÉATION RAPIDE
@@ -1548,7 +1562,7 @@ const BoissonApp = () => {
                 setQuantite={(q) =>
                   setItemQuantities((prev) => ({
                     ...prev,
-                    [b.id]: clampInt(q, 1)
+                    [b.id]: clamp(q, 1)
                   }))
                 }
                 onAdd={() => ajouterAuPanier(b)}
@@ -1807,7 +1821,7 @@ const BoissonApp = () => {
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 900 }}>
           <UserPlus size={20} />
-          Nouveau livreur
+          Nouveau collaborateur
         </DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2 }}>

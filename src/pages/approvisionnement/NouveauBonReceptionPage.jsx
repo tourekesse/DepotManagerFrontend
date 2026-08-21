@@ -19,6 +19,7 @@ import {
 import { Add, Delete, Save, ArrowBack } from '@mui/icons-material';
 import { privateApi } from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '../../utils/currencyUtils';
 
 const NouveauBonReceptionPage = () => {
   const navigate = useNavigate();
@@ -93,10 +94,12 @@ const NouveauBonReceptionPage = () => {
     newLignes[index].produitId = produit ? produit.id : null;
     
     // Pré-remplir le prix avec le prix d'achat ou prix de vente du produit
-    if (produit && produit.prixAchat) {
-      newLignes[index].prixUnitaire = produit.prixAchat;
-    } else if (produit && produit.prixVente) {
-      newLignes[index].prixUnitaire = produit.prixVente;
+    const prixAchat = produit?.prixAchatHt ?? produit?.prixAchat;
+    const prixVente = produit?.prixVenteHt ?? produit?.prixVente;
+    if (prixAchat) {
+      newLignes[index].prixUnitaire = prixAchat;
+    } else if (prixVente) {
+      newLignes[index].prixUnitaire = prixVente;
     }
     
     setLignes(newLignes);
@@ -108,13 +111,6 @@ const NouveauBonReceptionPage = () => {
 
   const calculateMontantTotal = () => {
     return lignes.reduce((sum, ligne) => sum + calculateSousTotal(ligne), 0);
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount) + ' FCFA';
   };
 
   const handleSubmit = async () => {
@@ -267,7 +263,7 @@ const NouveauBonReceptionPage = () => {
                   <TableCell>
                     <Autocomplete
                       options={produits}
-                      getOptionLabel={(option) => option.nomProduit || ''}
+                      getOptionLabel={(option) => option.designation || option.nomProduit || ''}
                       value={ligne.produitObj}
                       onChange={(event, newValue) => handleProduitChange(index, newValue)}
                       renderInput={(params) => (

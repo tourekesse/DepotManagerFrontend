@@ -3,8 +3,8 @@ import { Box, Typography, Paper, CircularProgress, Alert, Button, IconButton } f
 import { TrendingUp, ShoppingCart, AlertTriangle, Package, Users, AttachMoney, RefreshCw } from "lucide-react";
 import { getActivePointDeVenteId } from "../../../utils/pdv";
 import { publicApi } from "../../../api/axios";
-
-const formatF = (n) => `${Number(n || 0).toLocaleString("fr-FR")} FCFA`;
+import { formatCurrency } from "../../../utils/currencyUtils";
+import EmballageTracker from "../../../components/EmballageTracker";
 
 export default function DashboardHome() {
   const [stats, setStats] = useState(null);
@@ -79,14 +79,14 @@ export default function DashboardHome() {
   const kpiCards = [
     {
       title: "Ventes du jour",
-      value: stats?.ventesJour ? formatF(stats.ventesJour) : "0 FCFA",
+      value: stats?.ventesJour ? formatCurrency(stats.ventesJour) : formatCurrency(0),
       icon: <TrendingUp size={24} />,
       color: "#4caf50",
       bgColor: "#e8f5e8"
     },
     {
       title: "Ventes du mois",
-      value: stats?.ventesMois ? formatF(stats.ventesMois) : "0 FCFA",
+      value: stats?.ventesMois ? formatCurrency(stats.ventesMois) : formatCurrency(0),
       icon: <AttachMoney size={24} />,
       color: "#2196f3",
       bgColor: "#e3f2fd"
@@ -199,7 +199,7 @@ export default function DashboardHome() {
                 </Typography>
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 700, color: "#666" }}>
-                -- FCFA
+                {formatCurrency(0)}
               </Typography>
             </Paper>
           ))}
@@ -288,23 +288,9 @@ export default function DashboardHome() {
         ))}
       </Box>
 
-      {/* ✅ ESPACE POUR FUTURES SECTIONS */}
+      {/* ✅ SUIVI DES EMBALLAGES */}
       <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-          Activités récentes
-        </Typography>
-
-        <Paper
-          sx={{
-            p: 3,
-            borderRadius: 2,
-            boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-          }}
-        >
-          <Typography sx={{ opacity: 0.6, textAlign: "center" }}>
-            Section activités récentes - À implémenter
-          </Typography>
-        </Paper>
+        <EmballageTracker />
       </Box>
     </Box>
   );

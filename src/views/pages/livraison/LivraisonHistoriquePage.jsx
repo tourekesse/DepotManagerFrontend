@@ -17,6 +17,7 @@ import GererCasiersModal from '../../../components/GererCasiersModal';
 import PrintReceiptButton from '../../../components/PrintReceiptButton';
 import { formatDateCI } from '../../../utils/dateUtils';
 import { useUser } from '../../../context/UserContext';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 export default function LivraisonHistoriquePage() {
   const navigate = useNavigate();
@@ -108,7 +109,7 @@ export default function LivraisonHistoriquePage() {
       field: 'totalGeneral',
       headerName: 'Montant',
       width: 110,
-      renderCell: (params) => params.value ? parseFloat(params.value).toLocaleString('fr-FR') + ' FCFA' : ''
+      renderCell: (params) => params.value ? formatCurrency(params.value) : ''
     },
     {
       field: 'statutLivraison',
@@ -203,7 +204,7 @@ export default function LivraisonHistoriquePage() {
                       </Grid>
                       <Grid item xs={6} sx={{ textAlign: 'right' }}>
                         <Typography variant="caption" color="textSecondary">Montant</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{parseFloat(row.totalGeneral || 0).toLocaleString('fr-FR')} FCFA</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatCurrency(row.totalGeneral)}</Typography>
                       </Grid>
                       <Grid item xs={12}>
                         <Typography variant="caption" color="textSecondary">Date commande</Typography>

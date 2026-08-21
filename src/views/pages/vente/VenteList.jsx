@@ -25,6 +25,7 @@ import { useUser } from '../../../context/UserContext';
 import { fetchVentesByPointDeVente } from '../../../api/ventesApi';
 import { formatDateCI } from '../../../utils/dateUtils';
 import { getActivePointDeVenteId } from '../../../utils/pdv';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 export default function VenteList() {
     const navigate = useNavigate();
@@ -43,11 +44,6 @@ export default function VenteList() {
     const [loading, setLoading] = React.useState(true);
     const [pdfModalOpen, setPdfModalOpen] = React.useState(false);
     const [pdfUrl, setPdfUrl] = React.useState(null);
-
-    // Formater les montants avec séparateur de milliers
-    const formatMontant = (montant) => {
-        return new Intl.NumberFormat('fr-FR').format(montant) + ' FCFA';
-    };
 
     const loadData = React.useCallback(async () => {
         console.log("Point de vente utilisé pour le chargement :", pvId);
@@ -125,7 +121,7 @@ export default function VenteList() {
             field: 'totalGeneral',
             headerName: 'Montant',
             width: isMobile ? 100 : 120,
-            renderCell: (params) => formatMontant(params.row.totalGeneral)
+            renderCell: (params) => formatCurrency(params.row.totalGeneral)
         },
         {
             field: 'modeLivraison',

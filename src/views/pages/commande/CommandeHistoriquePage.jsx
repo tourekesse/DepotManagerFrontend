@@ -20,6 +20,7 @@ import useNotifications from '../../../crud-dashboard/hooks/useNotifications/use
 import { privateApi } from '../../../api/axios';
 import { formatDateCI } from '../../../utils/dateUtils';
 import { useUser } from '../../../context/UserContext';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 
 export default function CommandeHistoriquePage({ isClientView = false }) {
@@ -72,7 +73,7 @@ export default function CommandeHistoriquePage({ isClientView = false }) {
       field: 'montantTotal',
       headerName: 'Montant',
       width: 140,
-      renderCell: (params) => params.value ? parseFloat(params.value).toLocaleString('fr-FR') + ' FCFA' : ''
+      renderCell: (params) => params.value ? formatCurrency(parseFloat(params.value)) : ''
     },
     {
       field: 'statut',

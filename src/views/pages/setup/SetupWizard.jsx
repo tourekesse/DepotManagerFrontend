@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -17,7 +17,19 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Stack,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Paper,
+  List,
+  ListItemButton,
+  ListItemText,
 } from "@mui/material";
+import { InputMask } from "primereact/inputmask";
+import { getCountries, DEFAULT_COUNTRY, getCountryByCode } from "../../../config/countries";
 import {
   Store,
   MapPin,
@@ -25,18 +37,160 @@ import {
   Building2,
   CheckCircle,
   ChevronRight,
+  Map,
+  Locate,
+  Search,
+  Globe,
 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import { finalizeSetup } from "./SetupService";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+function MapRecenter({ center, zoom = 15 }) {
+  const map = useMap();
+  React.useEffect(() => {
+    if (center) map.setView(center, zoom);
+  }, [center, map, zoom]);
+  return null;
+}
+
+function MapClickHandler({ onPick }) {
+  useMapEvents({ click(e) { onPick(e.latlng.lat, e.latlng.lng); } });
+  return null;
+}
+
+function AddressMapPicker({ open, lat, lng, onClose, onConfirm, country }) {
+  const [center, setCenter] = useState(country?.mapCenter || DEFAULT_COUNTRY.mapCenter);
+  const [marker, setMarker] = useState(null);
+  const [address, setAddress] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [locating, setLocating] = useState(false);
+
+  React.useEffect(() => {
+    if (!open) return;
+    if (lat && lng) { setMarker([lat, lng]); setCenter([lat, lng]); }
+    else { setMarker(null); setCenter(country?.mapCenter || [5.359952, -4.008256]); }
+    setAddress(""); setSearchText(""); setSearchResults([]);
+  }, [open, lat, lng]);
+
+  const reverseGeocode = async (la, lo) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${la}&lon=${lo}`);
+      const data = await res.json();
+      if (data?.display_name) setAddress(data.display_name);
+    } catch (e) {}
+  };
+
+  const pickPosition = (la, lo, addr = "") => {
+    setMarker([la, lo]); setCenter([la, lo]);
+    if (addr) setAddress(addr); else reverseGeocode(la, lo);
+  };
+
+  const handleSearch = async () => {
+    if (!searchText.trim()) return;
+    setSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(searchText.trim())}`);
+      const data = await res.json();
+      setSearchResults(Array.isArray(data) ? data : []);
+    } catch (e) { setSearchResults([]); }
+    finally { setSearching(false); }
+  };
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { pickPosition(pos.coords.latitude, pos.coords.longitude); setLocating(false); },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle sx={{ fontWeight: 900 }}>Choisir la position de ton dépôt</DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <TextField fullWidth size="small" label="Rechercher un lieu"
+              value={searchText} onChange={(e) => setSearchText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSearch(); } }} />
+            <Button variant="contained" startIcon={searching ? <CircularProgress size={16} color="inherit" /> : <Search />}
+              onClick={handleSearch} disabled={searching} sx={{ minWidth: 120 }}>Rechercher</Button>
+            <Button variant="outlined" startIcon={locating ? <CircularProgress size={16} /> : <Locate />}
+              onClick={handleLocateMe} disabled={locating} sx={{ minWidth: 130 }}>Ma position</Button>
+          </Stack>
+
+          {searchResults.length > 0 && (
+            <Paper variant="outlined" sx={{ maxHeight: 170, overflow: "auto" }}>
+              <List dense disablePadding>
+                {searchResults.map((r) => (
+                  <ListItemButton key={`${r.place_id}-${r.lat}-${r.lon}`}
+                    onClick={() => { pickPosition(r.lat, r.lon, r.display_name); setSearchResults([]); }}>
+                    <ListItemText primary={r.display_name} primaryTypographyProps={{ fontSize: 13, fontWeight: 600 }} />
+                  </ListItemButton>
+                ))}
+              </List>
+            </Paper>
+          )}
+
+          <Box sx={{ height: { xs: 320, sm: 380 }, borderRadius: 1, overflow: "hidden", border: "1px solid #ddd" }}>
+            <MapContainer center={center} zoom={13} style={{ height: "100%", width: "100%" }}>
+              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <MapRecenter center={center} zoom={marker ? 16 : 13} />
+              <MapClickHandler onPick={pickPosition} />
+              {marker && <Marker position={marker}><Popup>Position du dépôt</Popup></Marker>}
+            </MapContainer>
+          </Box>
+
+          <Alert severity={marker ? "success" : "info"} icon={<MapPin />}>
+            {marker ? `Position : ${marker[0].toFixed(6)}, ${marker[1].toFixed(6)}`
+              : "Clique sur la carte ou cherche un lieu pour placer ton dépôt."}
+          </Alert>
+
+          <TextField fullWidth size="small" label="Adresse / repère" value={address}
+            onChange={(e) => setAddress(e.target.value)} placeholder="Ex: Cocody, près du pont..." />
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Annuler</Button>
+        <Button variant="contained" onClick={() => onConfirm(address, marker)}
+          disabled={!address.trim() && !marker}>Utiliser cette position</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 export default function SetupWizard() {
   const navigate = useNavigate();
+  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY.code);
   const [etablissement, setTypeEtablissement] = useState("");
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
   const [adresse, setAdresse] = useState("");
+  const [adresseLat, setAdresseLat] = useState(null);
+  const [adresseLng, setAdresseLng] = useState(null);
+  const [openMapPicker, setOpenMapPicker] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const country = getCountryByCode(countryCode);
 
   const typesOptions = [
     { label: "Dépôt", value: "DEPOT" },
@@ -55,16 +209,21 @@ export default function SetupWizard() {
     const dmUser = JSON.parse(localStorage.getItem("dmUser"));
     const phoneCandidate = telephone || dmUser?.phone_number || dmUser?.phone || "";
     const phoneClean = phoneCandidate.replace(/\s/g, "");
-    const isValid = etablissement && nom && phoneClean.length >= 8 && adresse;
+
+    const missing = [];
+    if (!etablissement) missing.push("Type d'activité");
+    if (!nom.trim()) missing.push("Nom de l'établissement");
+    if (phoneClean.length < country.phoneDigits) missing.push(`Téléphone (${country.phoneDigits} chiffres)`);
+    if (!adresse.trim()) missing.push("Adresse / Localisation");
+
+    if (missing.length > 0) {
+      setErrorMsg(`Champs manquants : ${missing.join(", ")}`);
+      return;
+    }
 
     const codeBase = nom.normalize("NFD").replace(/[\u0300-\u036f\s-]/g, "").toUpperCase().substring(0, 5);
     const uniqueSuffix = Date.now().toString(36).toUpperCase();
     const codePvUnique = `PV-${codeBase}-${uniqueSuffix}`;
-
-    if (!isValid) {
-      setErrorMsg("Tous les champs sont requis avec un téléphone valide.");
-      return;
-    }
 
     if (!dmUser?.userId) {
       setErrorMsg("Impossible d'identifier l'utilisateur (userId manquant).");
@@ -93,15 +252,19 @@ export default function SetupWizard() {
       userId: dmUser.userId,
       nomEtablissement: nom,
       adresseEtablissement: adresse,
-      villeEtablissement: "Abidjan",
+      villeEtablissement: country.mapCity,
       nomPv: nom + " - PV Principal",
       codePv: codePvUnique,
       adressePv: adresse,
-      villePv: "Abidjan",
+      villePv: country.mapCity,
       phonePv: phoneClean,
+      pays: country.code,
+      dialCode: country.dialCode,
       typeEtablissement: etablissement,
       profil: profil,
       fonction: fonction,
+      latitude: adresseLat || undefined,
+      longitude: adresseLng || undefined,
     };
 
     setSubmitting(true);
@@ -124,6 +287,7 @@ export default function SetupWizard() {
       localStorage.setItem("dmUser", JSON.stringify(dmUser));
       localStorage.setItem("role", dmUser.role);
       localStorage.setItem("activityType", etablissement);
+      localStorage.setItem("userCountry", countryCode);
 
       setTimeout(() => {
         navigate("/accueil");
@@ -146,15 +310,15 @@ export default function SetupWizard() {
     >
       <Container maxWidth="md">
         {/* Header */}
-        <Box sx={{ textAlign: "center", mb: 6 }}>
+        <Box sx={{ textAlign: "center", mb: { xs: 3, md: 6 } }}>
           <Box
             component="img"
             src="/logo.svg"
             alt="DepotManager Logo"
-            sx={{ width: 64, height: 64, mb: 2 }}
+            sx={{ width: { xs: 48, md: 64 }, height: { xs: 48, md: 64 }, mb: 2 }}
           />
           <Typography
-            variant="h4"
+            variant={{ xs: "h5", md: "h4" }}
             sx={{ fontWeight: 800, color: "#6A1B9A", mb: 1 }}
           >
             Configure ton dépôt
@@ -182,7 +346,7 @@ export default function SetupWizard() {
             boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
           }}
         >
-          <CardContent sx={{ p: 4 }}>
+          <CardContent sx={{ p: { xs: 2, md: 4 } }}>
             {/* Badges */}
             <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
               <Box
@@ -235,31 +399,68 @@ export default function SetupWizard() {
 
             <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={3}>
+                {/* Pays */}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                    <Globe size={18} color="#6A1B9A" /> Pays *
+                  </Typography>
+                  <Grid container spacing={1.5}>
+                    {getCountries().map((c) => (
+                      <Grid item xs={4} key={c.code}>
+                        <Card
+                          onClick={() => { setCountryCode(c.code); setTelephone(""); }}
+                          sx={{
+                            cursor: "pointer",
+                            textAlign: "center",
+                            p: 1.5,
+                            border: countryCode === c.code ? "2px solid #6A1B9A" : "2px solid #e0e0e0",
+                            bgcolor: countryCode === c.code ? "#f3e5f5" : "#fff",
+                            borderRadius: 2,
+                            transition: "all 0.2s",
+                            "&:hover": { borderColor: "#6A1B9A", bgcolor: "#faf5ff" },
+                          }}
+                        >
+                          <Typography variant="h5" sx={{ mb: 0.5 }}>{c.flag}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: countryCode === c.code ? 800 : 500, color: countryCode === c.code ? "#6A1B9A" : "#333" }}>
+                            {c.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {c.dialCode}
+                          </Typography>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Grid>
+
                 {/* Type d'activité */}
                 <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <InputLabel>Type d'activité *</InputLabel>
-                    <Select
-                      value={etablissement}
-                      label="Type d'activité *"
-                      onChange={(e) => setTypeEtablissement(e.target.value)}
-                      required
-                      startAdornment={
-                        <Box sx={{ pl: 1, pr: 1, display: "flex" }}>
-                          <Building2 size={20} color="#6A1B9A" />
-                        </Box>
-                      }
-                    >
-                      <MenuItem value="">
-                        <em>-- Sélectionnez le type --</em>
-                      </MenuItem>
-                      {typesOptions.map((opt) => (
-                        <MenuItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                    <Building2 size={18} color="#6A1B9A" /> Type d'activité *
+                  </Typography>
+                  <Grid container spacing={1.5}>
+                    {typesOptions.map((opt) => (
+                      <Grid item xs={6} sm={3} key={opt.value}>
+                        <Card
+                          onClick={() => setTypeEtablissement(opt.value)}
+                          sx={{
+                            cursor: "pointer",
+                            textAlign: "center",
+                            p: 2,
+                            border: etablissement === opt.value ? "2px solid #6A1B9A" : "2px solid #e0e0e0",
+                            bgcolor: etablissement === opt.value ? "#f3e5f5" : "#fff",
+                            borderRadius: 2,
+                            transition: "all 0.2s",
+                            "&:hover": { borderColor: "#6A1B9A", bgcolor: "#faf5ff" },
+                          }}
+                        >
+                          <Typography variant="body1" sx={{ fontWeight: etablissement === opt.value ? 800 : 500, color: etablissement === opt.value ? "#6A1B9A" : "#333" }}>
+                            {opt.label}
+                          </Typography>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
                 </Grid>
 
                 {/* Nom */}
@@ -282,41 +483,91 @@ export default function SetupWizard() {
 
                 {/* Téléphone */}
                 <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Téléphone *"
-                    value={telephone}
-                    onChange={(e) => setTelephone(e.target.value)}
-                    placeholder="07 XX XX XX XX"
-                    required
-                    InputProps={{
-                      startAdornment: (
-                        <Box sx={{ pl: 1, pr: 1, display: "flex" }}>
-                          <Phone size={20} color="#6A1B9A" />
-                        </Box>
-                      ),
-                    }}
-                  />
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Phone size={20} color="#6A1B9A" />
+                    <Box sx={{ flex: 1 }}>
+                      <InputMask
+                        key={country.phoneMask}
+                        mask={country.phoneMask}
+                        value={telephone}
+                        onChange={(e) => setTelephone(e.value || "")}
+                        placeholder={country.phoneExample}
+                        style={{
+                          width: "100%",
+                          padding: "16.5px 14px",
+                          fontSize: "1rem",
+                          border: "1px solid #c4c4c4",
+                          borderRadius: "4px",
+                          outline: "none",
+                          boxSizing: "border-box",
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = "#6A1B9A"; e.target.style.boxShadow = "0 0 0 1px #6A1B9A"; }}
+                        onBlur={(e) => { e.target.style.borderColor = "#c4c4c4"; e.target.style.boxShadow = "none"; }}
+                      />
+                      <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
+                        Numéro {country.name.toLowerCase()} à {country.phoneDigits} chiffres ({country.dialCode})
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Grid>
 
-                {/* Adresse */}
+                {/* Adresse - Carte GPS */}
                 <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Adresse *"
-                    value={adresse}
-                    onChange={(e) => setAdresse(e.target.value)}
-                    placeholder="Quartier, rue..."
-                    required
-                    InputProps={{
-                      startAdornment: (
-                        <Box sx={{ pl: 1, pr: 1, display: "flex" }}>
-                          <MapPin size={20} color="#6A1B9A" />
-                        </Box>
-                      ),
-                    }}
-                  />
+                  <Stack spacing={1.5}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 900, display: "flex", alignItems: "center", gap: 1 }}>
+                      <MapPin size={18} color="#6A1B9A" /> Localisation du dépôt *
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<Map />}
+                      onClick={() => setOpenMapPicker(true)}
+                      sx={{ alignSelf: "flex-start", fontWeight: 800, minWidth: 200, bgcolor: "#6A1B9A", "&:hover": { bgcolor: "#7E57C2" } }}
+                    >
+                      Choisir sur la carte
+                    </Button>
+                    {adresse ? (
+                      <Alert severity="success" icon={<MapPin />} sx={{ borderRadius: 2 }}>
+                        {adresse}
+                        {adresseLat && adresseLng && (
+                          <Typography variant="caption" display="block" sx={{ mt: 0.5, opacity: 0.7 }}>
+                            GPS: {adresseLat.toFixed(6)}, {adresseLng.toFixed(6)}
+                          </Typography>
+                        )}
+                      </Alert>
+                    ) : (
+                      <Alert severity="info" icon={<MapPin />} sx={{ borderRadius: 2 }}>
+                        Aucune position choisie. Clique sur le bouton ci-dessus pour localiser ton dépôt sur la carte.
+                      </Alert>
+                    )}
+                    <TextField
+                      fullWidth
+                      label="Repère / details adresse"
+                      value={adresse}
+                      onChange={(e) => setAdresse(e.target.value)}
+                      placeholder="Ex: Quartier, rue, repère..."
+                      InputProps={{
+                        startAdornment: (
+                          <Box sx={{ pl: 1, pr: 1, display: "flex" }}>
+                            <MapPin size={20} color="#6A1B9A" />
+                          </Box>
+                        ),
+                      }}
+                    />
+                  </Stack>
                 </Grid>
+
+                <AddressMapPicker
+                  open={openMapPicker}
+                  lat={adresseLat}
+                  lng={adresseLng}
+                  country={country}
+                  onClose={() => setOpenMapPicker(false)}
+                  onConfirm={(addr, marker) => {
+                    if (addr) setAdresse(addr);
+                    if (marker) { setAdresseLat(marker[0]); setAdresseLng(marker[1]); }
+                    setOpenMapPicker(false);
+                  }}
+                />
 
                 {/* Submit */}
                 <Grid item xs={12}>

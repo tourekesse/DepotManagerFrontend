@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Paper, Typography, Grid, Button } from '@mui/material';
-import { LocalShipping, Receipt, Inventory } from '@mui/icons-material';
+import { LocalShipping, Receipt, Inventory, AutoAwesome } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const ApprovisionnementPage = () => {
@@ -27,6 +27,13 @@ const ApprovisionnementPage = () => {
       icon: <Inventory sx={{ fontSize: 60 }} />,
       path: '/accueil/approvisionnement/bons/nouveau',
       color: '#ed6c02'
+    },
+    {
+      title: 'Commande Fournisseur Intelligente',
+      description: 'Générer automatiquement une commande fournisseur basée sur les dettes payées',
+      icon: <AutoAwesome sx={{ fontSize: 60 }} />,
+      path: '/accueil/approvisionnement/commande-fournisseur-intelligente',
+      color: '#9c27b0'
     }
   ];
 

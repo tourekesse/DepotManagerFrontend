@@ -65,7 +65,7 @@ export default function CaisseMouvement() {
   const chargerTypes = async () => {
     setLoadingTypes(true);
     try {
-      const response = await privateApi.get('/api/type-operations');
+      const response = await privateApi.get(`/api/type-operations?pvId=${pvId}`);
       setTypes(response.data || []);
     } catch (err) {
       console.error('Erreur chargement types:', err);

@@ -1,6 +1,8 @@
 // src/api/invitationApi.js
 import { privateApi } from './axios';
 import { sendSMS } from './smsApi';
+import { getUserCountry } from '../config/countries';
+import { formatPhoneDisplay } from '../utils/phoneUtils';
 
 /**
  * Envoie une invitation d'installation de l'application à un nouveau client
@@ -116,13 +118,13 @@ Vous avez été invité(e) par *${gerantName}* du dépôt *${depotName}* à inst
 2. Utilisez votre numéro: ${params.clientPhone}
 3. Choisissez votre mot de passe
 
-📞 Support: +225 07 08 40 40 50
+📞 Support: ${formatPhoneDisplay('0708404050', getUserCountry().code)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 }
 
 /**
- * Construit le message SMS optimisé pour la Côte d'Ivoire
+ * Construit le message SMS optimisé
  */
 function buildSMSInvitationMessage(params) {
   const { clientName, depotName, gerantName } = params;
@@ -131,7 +133,7 @@ function buildSMSInvitationMessage(params) {
 ${gerantName} vous recommande l'app pour commander facilement.
 Téléchargez: [lien-app]
 Tel: ${params.clientPhone}
-Support: 07 08 40 40 50`;
+Support: ${getUserCountry().phoneExample}`;
 }
 
 /**

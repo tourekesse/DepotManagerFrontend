@@ -8,6 +8,7 @@ import { fetchMenu } from '../../api/menuApi';
 import DashboardHeader from './DashboardHeader';
 import DashboardSidebar from './DashboardSidebar';
 import SitemarkIcon from './SitemarkIcon';
+import SitaAssistant from '../../components/sita/SitaAssistant';
 
 export default function DashboardLayout() {
   const theme = useTheme();
@@ -68,9 +69,11 @@ export default function DashboardLayout() {
     [menuItems],
   );
 
+  const isDocumentationPath = pathname === '/accueil/documentation' || pathname.startsWith('/accueil/documentation/');
+
   const isAllowed = allowedPaths.length === 0 // pas encore chargé → ne pas bloquer
     ? true
-    : allowedPaths.some(
+    : isDocumentationPath || allowedPaths.some(
         (prefix) => pathname === prefix || pathname.startsWith(prefix + '/'),
       );
 
@@ -125,6 +128,8 @@ export default function DashboardLayout() {
           <Outlet />
         </Box>
       </Box>
+
+      <SitaAssistant />
     </Box>
   );
 }

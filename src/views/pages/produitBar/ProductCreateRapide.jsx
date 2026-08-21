@@ -14,6 +14,7 @@ import useNotifications from "../../../crud-dashboard/hooks/useNotifications/use
 import ProductBulkSummaryBar from "../../../components/ProductBulkSummaryBar";
 import { getUserRole } from "../../../config/roleConfig";
 import { getActivePointDeVenteId } from "../../../utils/pdv";
+import { formatCurrency } from "../../../utils/currencyUtils";
 
 const LocalPageContainer = ({ children, title }) => (
   <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: '1600px', margin: '0 auto' }}>
@@ -42,16 +43,42 @@ export default function ProductCreateRapide() {
   // Référence pour le focus automatique
   const searchInputRef = React.useRef(null);
 
-  // Set pdvId based on role
+  // Résolution robuste du point de vente actif (même si la session n'en contient pas)
+  const resolvePvId = React.useCallback(async () => {
+    const cached = activePointDeVente?.id || getActivePointDeVenteId();
+    if (cached) return cached;
+
+    try {
+      const res = await privateApi.get("/api/utilisateur/context");
+      const ctxPv = res.data?.pointDeVenteActif;
+      const ctxPvId = ctxPv?.id || res.data?.pointDeVenteActifId;
+      if (ctxPvId) {
+        const pvObj = ctxPv?.id ? ctxPv : { id: ctxPvId };
+        localStorage.setItem("activePV", JSON.stringify(pvObj));
+        return ctxPvId;
+      }
+    } catch (err) {
+      console.warn("Impossible de récupérer le contexte PV :", err);
+    }
+
+    return null;
+  }, [activePointDeVente]);
+
+  // Set pdvId based on role (avec fallback backend pour les bars / proprios)
   React.useEffect(() => {
+    let activeEffet = true;
     const currentRole = getUserRole();
     setRole(currentRole);
-    if (currentRole === 'CLIENT_BAR') {
-      setPdvId(null); // Bars search all references, not limited to supplier
-    } else {
-      setPdvId(activePointDeVente?.id);
-    }
-  }, [activePointDeVente]);
+
+    (async () => {
+      const pv = await resolvePvId();
+      if (activeEffet) {
+        setPdvId(currentRole === 'CLIENT_BAR' ? null : pv); // Bars search all references, not limited to supplier
+      }
+    })();
+
+    return () => { activeEffet = false; };
+  }, [resolvePvId, activePointDeVente]);
 
   // 1. RECHERCHE CATALOGUE
   React.useEffect(() => {
@@ -119,7 +146,7 @@ export default function ProductCreateRapide() {
 
   // 3. ENREGISTREMENT FLUIDE
   const handleAjouterProduits = async () => {
-    const pdvId = activePointDeVente?.id || getActivePointDeVenteId();
+    const pdvId = activePointDeVente?.id || getActivePointDeVenteId() || (await resolvePvId());
     if (!pdvId) {
       notifications.show("Sélectionne d'abord un point de vente actif", { severity: "error" });
       return;
@@ -146,6 +173,7 @@ export default function ProductCreateRapide() {
             consigneBouteille: 0,
             consigneCasier: 0,
             stockInitial: Number(p.stockInitial || 0),
+            stockVideInitial: Number(p.stockVideInitial || 0),
             stockMinimum: Number(p.stockMinimum),
             pointDeVente: { id: pdvId },
             reference: { id: p.id }
@@ -214,7 +242,7 @@ export default function ProductCreateRapide() {
               const isSelected = selected.find(s => s.id === ref.id);
               const data = isSelected || {};
               const nbBouteilles = data.nbreBouteillesParCasier || ref.casierBouteilles;
-              const achatCalc = data.prixAchat && data.prixAchat > 0 ? `${data.prixAchat} FCFA` : "Saisir prix casier";
+              const achatCalc = data.prixAchat && data.prixAchat > 0 ? formatCurrency(data.prixAchat) : "Saisir prix casier";
 
               return (
                 <Accordion 

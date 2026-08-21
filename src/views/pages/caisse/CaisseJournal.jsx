@@ -15,8 +15,20 @@ import {
 import { Add, Speed, Search } from '@mui/icons-material';
 import { privateApi } from '../../../api/axios';
 import useActivePointDeVenteId from '../../../hooks/useActivePointDeVenteId';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 const ITEMS_PER_PAGE = 8;
+const TYPES_ENTREE_CAISSE = [
+  'DEPOT_CAISSE',
+  'ECART_POSITIF',
+  'OUVERTURE_CAISSE',
+  'VENTE',
+  'LIVRAISON',
+  'REPORT_SOLDE',
+  'RECETTE_AUTRE',
+  'PAIEMENT_LIQUIDE',
+  'PAIEMENT_EMBALLAGE',
+];
 
 export default function CaisseJournal() {
   const navigate = useNavigate();
@@ -45,9 +57,10 @@ export default function CaisseJournal() {
       
       const responseStatut = await privateApi.get(`/api/caisse/statut?pvId=${activePvId}`);
       console.log('📊 Réponse statut caisse:', responseStatut.data);
-      setCaisseOuverte(responseStatut.data);
+      const estOuverte = responseStatut.data?.ouverte === true;
+      setCaisseOuverte(estOuverte);
       
-      if (responseStatut.data) {
+      if (estOuverte) {
         const responseCaisse = await privateApi.get(`/api/caisse/aujourd-hui?pvId=${activePvId}`);
         setCaisse(responseCaisse.data);
         
@@ -81,13 +94,18 @@ export default function CaisseJournal() {
   };
 
   const getTypeColor = (type) => {
-    if (['DEPOT_CAISSE', 'ECART_POSITIF', 'OUVERTURE_CAISSE', 'VENTE', 'LIVRAISON', 'REPORT_SOLDE', 'RECETTE_AUTRE'].includes(type)) return 'success';
+    if (TYPES_ENTREE_CAISSE.includes(type)) return 'success';
     if (['DEPENSE', 'ECART_NEGATIF', 'RETRAIT_CAISSE', 'RETOUR_CASIER'].includes(type)) return 'error';
     return 'default';
   };
 
   const formatMontant = (montant) => {
     return new Intl.NumberFormat('fr-FR').format(montant || 0);
+  };
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) return '';
+    return new Date(`${dateValue}T00:00:00`).toLocaleDateString('fr-FR');
   };
 
   // Filtrer les mouvements
@@ -118,13 +136,15 @@ export default function CaisseJournal() {
           {/* Header */}
           <Box sx={{ mb: 2 }}>
             <Typography variant="h6" sx={{ mb: 1 }}>
-              Journal - {new Date().toLocaleDateString('fr-FR')}
+              {caisse?.dateOuverture
+                ? `Journal caisse - session ouverte depuis le ${formatDate(caisse.dateOuverture)}`
+                : `Journal - ${new Date().toLocaleDateString('fr-FR')}`}
             </Typography>
             
             {caisse && (
               <Box sx={{ p: 1, bgcolor: 'primary.main', borderRadius: 1, mb: 2 }}>
                 <Typography variant="body2" color="white" sx={{ fontWeight: 'bold' }}>
-                  Solde: {formatMontant(caisse.soldeFinal)} FCFA
+                  Solde: {formatCurrency(caisse.soldeFinal)}
                 </Typography>
               </Box>
             )}
@@ -149,6 +169,15 @@ export default function CaisseJournal() {
                 <Typography variant="body2">
                   Ouvrez la caisse pour enregistrer vos opérations du jour.
                 </Typography>
+                <Button
+                  size="small"
+                  variant="text"
+                  color="warning"
+                  sx={{ mt: 0.5, p: 0 }}
+                  onClick={() => navigate('/accueil/caisse/fermetures-auto')}
+                >
+                  📋 Rapport des caisses mal fermées (fermeture automatique)
+                </Button>
               </Box>
               <Button
                 variant="contained"
@@ -225,17 +254,6 @@ export default function CaisseJournal() {
             )}
           </Box>
 
-          {/* Debug info - temporaire */}
-          {process.env.NODE_ENV === 'development' && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              <Typography variant="body2">
-                🐛 Debug: caisseOuverte = {caisseOuverte ? 'true' : 'false'} | 
-                pvId = {pvId} | 
-                mouvements = {mouvements.length}
-              </Typography>
-            </Alert>
-          )}
-
           {/* Mouvements */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {paginatedMouvements.length === 0 ? (
@@ -268,7 +286,7 @@ export default function CaisseJournal() {
                         sx={{ fontWeight: 600, mb: 0.5 }}
                         color={getTypeColor(mvt.type)}
                       >
-                        {['DEPOT_CAISSE', 'ECART_POSITIF', 'OUVERTURE_CAISSE', 'VENTE', 'LIVRAISON', 'REPORT_SOLDE', 'RECETTE_AUTRE'].includes(mvt.type) ? '+' : '-'}
+                        {TYPES_ENTREE_CAISSE.includes(mvt.type) ? '+' : '-'}
                         {formatMontant(mvt.montant)} F
                       </Typography>
                       <Typography variant="caption" color="text.secondary">

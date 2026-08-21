@@ -10,6 +10,7 @@ import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import { formatCurrency } from '../utils/currencyUtils';
 
 // Ce composant regroupe le workflow de validation de livraison en 3 étapes :
 // 1. Récapitulatif, 2. Saisie manuelle (si besoin), 3. Confirmation
@@ -88,7 +89,7 @@ const LivraisonStepper = ({ vente, onClose, onValidate }) => {
                                 {/* Afficher le récapitulatif de la vente ici */}
                                 <div>Client : {vente.clientNom}</div>
                                 <div>Date : {vente.dateVente}</div>
-                                <div>Montant : {vente.montantTotal} FCFA</div>
+                                <div>Montant : {formatCurrency(vente.montantTotal)}</div>
                                 {/* ...autres infos */}
                                 <div className="flex gap-2 mt-4">
                                     <Button label="Tous les vides rendus" icon="pi pi-check" loading={loading} onClick={handleAllReturned} />

@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { 
   Box, Button, IconButton, Stack, Tooltip, Alert, 
-  useTheme, useMediaQuery, Card, CardContent, Typography, Divider, Grid 
+  useTheme, useMediaQuery, Card, CardContent, Typography, Divider, Grid, TextField
 } from '@mui/material';
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import StorefrontIcon from '@mui/icons-material/Storefront'; // Import pour l'icône
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +15,7 @@ import PageContainer from '../../../crud-dashboard/components/PageContainer';
 import useNotifications from '../../../crud-dashboard/hooks/useNotifications/useNotifications';
 import { fetchProduitsByPointDeVente, deleteProduit } from '../../../api/produitsApi';
 import { useUser } from '../../../context/UserContext';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 export default function VenteList() {
   const navigate = useNavigate();
@@ -25,6 +27,15 @@ export default function VenteList() {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
+
+  const filteredRows = React.useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((row) =>
+      (row.designation || '').toLowerCase().includes(term)
+    );
+  }, [rows, searchTerm]);
 
   const loadData = React.useCallback(async () => {
     if (!activePointDeVente?.id) return;
@@ -68,7 +79,7 @@ export default function VenteList() {
       headerAlign: 'right',
       valueFormatter: (params) => {
         const val = typeof params === 'object' ? params.value : params;
-        return `${parseFloat(val || 0).toLocaleString('fr-FR')} FCFA`;
+        return formatCurrency(val);
       }
     },
     { 
@@ -79,7 +90,7 @@ export default function VenteList() {
       headerAlign: 'right',
       valueFormatter: (params) => {
         const val = typeof params === 'object' ? params.value : params;
-        return `${parseFloat(val || 0).toLocaleString('fr-FR')} FCFA`;
+        return formatCurrency(val);
       }
     },
     { 
@@ -102,7 +113,7 @@ export default function VenteList() {
 
   const renderMobileView = () => (
     <Stack spacing={2} sx={{ mt: 2 }}>
-      {rows.map((row) => (
+      {filteredRows.map((row) => (
         <Card key={row.id} sx={{ borderRadius: 2, boxShadow: 1 }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -120,7 +131,7 @@ export default function VenteList() {
             <Grid container spacing={1}>
               <Grid item xs={6}>
                 <Typography variant="caption" color="textSecondary">Prix Vente</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>{parseFloat(row.prixVenteHt || 0).toLocaleString('fr-FR')} FCFA</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatCurrency(row.prixVenteHt)}</Typography>
               </Grid>
               <Grid item xs={6} sx={{ textAlign: 'right' }}>
                 <Typography variant="caption" color="textSecondary">Stock</Typography>
@@ -170,6 +181,14 @@ export default function VenteList() {
             <IconButton onClick={loadData} disabled={loading}><RefreshIcon /></IconButton>
           </Tooltip>
           <Button 
+            variant="outlined"
+            startIcon={<FileUploadIcon />}
+            onClick={() => navigate('/accueil/produits/import')}
+            sx={{ px: { xs: 1, sm: 2 } }}
+          >
+            {isMobile ? "Importer" : "Importer plusieurs produits"}
+          </Button>
+          <Button 
             variant="contained" 
             startIcon={<AddIcon />} 
             onClick={() => navigate('/accueil/produits/nouveau')}
@@ -182,13 +201,22 @@ export default function VenteList() {
     >
       <Box sx={{ width: '100%', mt: 2 }}>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        <TextField
+          fullWidth
+          size="small"
+          label="Rechercher un produit"
+          placeholder="Ex: Castel, Fanta..."
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          sx={{ mb: 2, bgcolor: 'background.paper' }}
+        />
         
         {isMobile ? (
           renderMobileView()
         ) : (
           <Box sx={{ height: 650, width: '100%' }}>
             <DataGrid 
-              rows={rows} 
+              rows={filteredRows} 
               columns={columns} 
               loading={loading} 
               disableRowSelectionOnClick

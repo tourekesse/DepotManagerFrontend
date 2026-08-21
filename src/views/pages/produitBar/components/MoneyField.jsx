@@ -1,5 +1,6 @@
 import * as React from "react";
 import { TextField, InputAdornment } from "@mui/material";
+import { getCurrencySymbol } from '../../../utils/currencyUtils';
 
 export default function MoneyField({
   label = "Montant",
@@ -59,7 +60,7 @@ export default function MoneyField({
       fullWidth
       // Ajout de l'unité FCFA à la fin pour plus de clarté
       InputProps={{
-        endAdornment: <InputAdornment position="end">FCFA</InputAdornment>,
+        endAdornment: <InputAdornment position="end">{getCurrencySymbol()}</InputAdornment>,
       }}
       {...props}
     />

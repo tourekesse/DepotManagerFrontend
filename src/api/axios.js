@@ -3,32 +3,31 @@ import axios from "axios";
 import { getActivePointDeVenteId } from "../utils/pdv";
 import { enqueue, flushQueue as flushQueueUtil } from "../utils/offline";
 
-// Fonction pour charger dynamiquement l'URL backend depuis la table appendpoint
+// Fonction pour charger dynamiquement l'URL backend
 export async function fetchBackendUrl() {
-  // Essayer d'abord via le proxy Vite
+  // 1️⃣ Priorité: Variable d'environnement VITE explicite (URL complète, pas /api seul)
+  if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== '/api') {
+    console.log('🔧 VITE_API_URL définie:', import.meta.env.VITE_API_URL);
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // 2️⃣ Découverte dynamique depuis la table app_endpoint
+  // En DEV: passe par le proxy Vite. En PROD: appel direct.
   try {
-    const response = await axios.get('/api/endpoints/backend');
+    const tempAxios = axios.create({ baseURL: '' });
+    const response = await tempAxios.get('/api/endpoints/backend');
     const endpoint = response.data;
     if (endpoint && endpoint.url) {
       const port = endpoint.port ? `:${endpoint.port}` : '';
-      return `${endpoint.url}${port}`;
+      const fullUrl = `${endpoint.url}${port}`;
+      console.log('🌐 URL backend depuis DB:', fullUrl);
+      return fullUrl;
     }
   } catch (error) {
-    console.log('Proxy failed, trying direct call to backend');
+    console.log('⚠️ Découverte backend DB échouée:', error.message);
   }
-  
-  // Fallback: appeler le backend directement
-  try {
-    const response = await axios.get('http://localhost:8085/api/endpoints/backend');
-    const endpoint = response.data;
-    if (endpoint && endpoint.url) {
-      const port = endpoint.port ? `:${endpoint.port}` : '';
-      return `${endpoint.url}${port}`;
-    }
-  } catch (error) {
-    console.log('Direct call failed');
-  }
-  
+
+  // 3️⃣ Fallback: proxy Vite
   return '';
 }
 
@@ -46,32 +45,21 @@ const flushQueue = async () => {
   });
 };
 
-// Création dynamique d'instances axios (sera configuré dans main.jsx)
-export let publicApi = axios.create({ baseURL: "" });
-export let privateApi = axios.create({ baseURL: "", withCredentials: true });
-
-export function setBackendUrl(url) {
-  publicApi = axios.create({
-    baseURL: url,
-    headers: { "Content-Type": "application/json" },
-    timeout: 40000,
-  });
-  privateApi = axios.create({
-    baseURL: url,
-    headers: { "Content-Type": "application/json" },
-    timeout: 40000,
-    withCredentials: true,
-  });
-  // Ajout des intercepteurs comme avant
-  privateApi.interceptors.request.use(
+// Fonction pour configurer les intercepteurs sur une instance axios
+function setupInterceptors(instance, isPrivate = false) {
+  instance.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      if (isPrivate) {
+        const token = localStorage.getItem("token");
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
-      // Injecter le Point de Vente actif comme en-tête pour les APIs qui le supportent
+      
+      // Injecter le Point de Vente actif comme en-tête
       const isClientEndpointWithoutPV = config.url?.includes('/api/auth/client/') ||
-                                       config.url?.includes('/api/dashboard/stats/client');
+                                       config.url?.includes('/api/dashboard/stats/client') ||
+                                       config.url?.includes('/api/commandes/client/mes-commandes'); // Ignorer pour Mes commandes
       
       if (!isClientEndpointWithoutPV) {
         try {
@@ -87,7 +75,7 @@ export function setBackendUrl(url) {
       // Offline queue pour les écritures API (hors auth)
       const isWrite = isWriteMethod(config.method);
       const isApi = config.url?.startsWith("/api/");
-      if (!navigator.onLine && isWrite && isApi && !isAuthEndpoint(config.url)) {
+      if (isPrivate && !navigator.onLine && isWrite && isApi && !isAuthEndpoint(config.url)) {
         enqueue(OFFLINE_QUEUE_KEY, {
           url: config.url,
           method: config.method,
@@ -107,40 +95,56 @@ export function setBackendUrl(url) {
     },
     (error) => Promise.reject(error)
   );
-  publicApi.interceptors.request.use(
-    (config) => {
-      try {
-        const pvId = getActivePointDeVenteId();
-        console.log("🔍 PV ID trouvé dans axios publicApi:", pvId);
-        if (pvId) {
-          config.headers["X-PV-ID"] = pvId;
-          console.log("✅ Header X-PV-ID ajouté dans publicApi:", pvId);
-        } else {
-          console.log("❌ PV ID est null dans publicApi - header X-PV-ID non ajouté");
-        }
-      } catch (error) {
-        console.log("❌ Erreur getActivePointDeVenteId dans publicApi:", error);
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+}
+
+// Création dynamique d'instances axios (sera configuré dans main.jsx)
+export let publicApi = axios.create({ baseURL: "" });
+export let privateApi = axios.create({ baseURL: "", withCredentials: true });
+
+// Initialiser les intercepteurs sur les instances de base
+setupInterceptors(publicApi, false);
+setupInterceptors(privateApi, true);
+
+export function setBackendUrl(url) {
+  // En DEV avec proxy Vite, on garde baseURL vide
+  // On ne change pas la configuration si url est vide (mode DEV)
+  if (!url || url === '') {
+    console.log('🔧 Mode DEV: garde baseURL vide (proxy Vite)');
+    return;
+  }
+  
+  console.log('🔧 Configuration backend URL:', url);
+  publicApi = axios.create({
+    baseURL: url,
+    headers: { "Content-Type": "application/json" },
+    timeout: 40000,
+  });
+  privateApi = axios.create({
+    baseURL: url,
+    headers: { "Content-Type": "application/json" },
+    timeout: 40000,
+    withCredentials: true,
+  });
+  
+  // Reconfigurer les intercepteurs sur les nouvelles instances
+  setupInterceptors(publicApi, false);
+  setupInterceptors(privateApi, true);
+  
+  // Intercepteur response spécifique
   privateApi.interceptors.response.use(
     (response) => response,
     (error) => {
-      // Liste des endpoints où on ignore les erreurs 403 (base de données vide)
       const endpointsSilencieux = [
         "/api/marques",
         "/api/formats",
         "/api/groupes",
-        "/api/groupeliquides", // ajoutez d'autres si nécessaire
+        "/api/groupeliquides",
       ];
 
       const estEndpointSilencieux = endpointsSilencieux.some((endpoint) =>
         error.config?.url?.includes(endpoint)
       );
 
-      // Si c'est un 403 sur un endpoint silencieux, retourner un tableau vide
       if (error.response?.status === 403 && estEndpointSilencieux) {
         return Promise.resolve({ data: [] });
       }

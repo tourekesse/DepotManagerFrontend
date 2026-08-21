@@ -41,18 +41,18 @@ export default function Register() {
             />
           </Box>
           <Typography variant="h4" fontWeight={700} mb={1} textAlign="center">
-            Register
+            Inscription
           </Typography>
 
           <Typography variant="body2" color="text.secondary" mb={3} textAlign="center">
-            Create your account
+            Créez votre compte
           </Typography>
 
           <Box component="form">
-            {/* Username */}
+            {/* Nom d'utilisateur */}
             <TextField
               fullWidth
-              placeholder="Username"
+              placeholder="Nom d'utilisateur"
               autoComplete="username"
               sx={{ mb: 2 }}
               InputProps={{
@@ -79,11 +79,11 @@ export default function Register() {
               }}
             />
 
-            {/* Password */}
+            {/* Mot de passe */}
             <TextField
               fullWidth
               type="password"
-              placeholder="Password"
+              placeholder="Mot de passe"
               autoComplete="new-password"
               sx={{ mb: 2 }}
               InputProps={{
@@ -95,11 +95,11 @@ export default function Register() {
               }}
             />
 
-            {/* Repeat Password */}
+            {/* Confirmer mot de passe */}
             <TextField
               fullWidth
               type="password"
-              placeholder="Repeat password"
+              placeholder="Confirmer le mot de passe"
               autoComplete="new-password"
               sx={{ mb: 3 }}
               InputProps={{
@@ -117,7 +117,7 @@ export default function Register() {
               fullWidth
               sx={{ py: 1.2, fontWeight: 600 }}
             >
-              Create Account
+              Créer mon compte
             </Button>
           </Box>
         </CardContent>

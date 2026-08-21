@@ -1,5 +1,6 @@
 // 📱 Push Notifications Service avec Firebase
 import { getFirebaseToken, onFirebaseMessage } from './firebase';
+import { checkApiHealth } from './apiHealth';
 
 class PushNotificationService {
   
@@ -22,17 +23,22 @@ class PushNotificationService {
   // Envoyer le token au serveur
   async sendTokenToServer(token, clientId) {
     try {
-      const response = await fetch(`/api/validation/clients/${clientId}/push-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain',
-        },
-        body: token
-      });
+    const response = await fetch(`/api/validation/clients/${clientId}/push-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+      body: token,
+      credentials: 'include'
+    });
       
-      if (response.ok) {
+      if (response && response.ok) {
         console.log('✅ Token Firebase envoyé au serveur');
         return true;
+      } else {
+        // Handle common backend errors gracefully
+        console.warn('⚠️ Envoi token échoué, statut:', response?.status);
+        return false;
       }
     } catch (error) {
       console.error('❌ Erreur envoi token:', error);
@@ -43,7 +49,19 @@ class PushNotificationService {
   // Initialiser le service
   async initialize(clientId) {
     console.log('🚀 Initialisation push notifications Firebase...');
-    
+    // Optional: quick health check to avoid firing calls against a known-down API
+    try {
+      const healthy = await checkApiHealth(800);
+      if (!healthy) {
+        console.warn('⚠️ Backend API health check failed (health endpoint down).');
+      } else {
+        console.log('✅ Backend API health check OK');
+      }
+    } catch (e) {
+      // swallow health check errors to avoid affecting UX
+      console.warn('⚠️ Health check error:', e?.message);
+    }
+
     // 1. Obtenir le token Firebase
     const token = await this.requestPermissionAndGetToken();
     if (!token) {

@@ -20,6 +20,7 @@ import PrintReceiptButton from '../../../components/PrintReceiptButton';
 import { sendDeliveryValidationRequest, getDeliveryValidationStatus } from '../../../api/validationApi';
 import { formatDateCI } from '../../../utils/dateUtils';
 import { useUser } from '../../../context/UserContext';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 
 export default function LivraisonList() {
@@ -46,6 +47,17 @@ export default function LivraisonList() {
   const [selectedVenteForCasiers, setSelectedVenteForCasiers] = React.useState(null);
   const [ventesCasiers, setVentesCasiers] = React.useState([]);
   const [clientNomForCasiers, setClientNomForCasiers] = React.useState('');
+  const [caisseOuverte, setCaisseOuverte] = React.useState(false);
+
+  const loadCaisseStatus = React.useCallback(async () => {
+    if (!activePointDeVente?.id) return;
+    try {
+      const res = await privateApi.get(`/api/caisse/statut?pvId=${activePointDeVente.id}`);
+      setCaisseOuverte(res.data.ouverte);
+    } catch (e) {
+      console.error('Erreur statut caisse:', e);
+    }
+  }, [activePointDeVente?.id]);
 
   const loadData = React.useCallback(async () => {
     if (!activePointDeVente?.id) {
@@ -67,7 +79,7 @@ export default function LivraisonList() {
           nomClient: res.data.client?.raisonsociale || res.data.client?.nom || 'Client',
           dateCommande: res.data.dateCommande,
           totalGeneral: res.data.montantTotal,
-          statutLivraison: 'NON_LIVREE',
+          statutLivraison: res.data.statut === 'LIVREE' ? 'LIVREE' : 'NON_LIVREE',
           modeRetrait: res.data.modeRetrait,
           livreur: res.data.livreur,
           client: res.data.client,
@@ -79,7 +91,7 @@ export default function LivraisonList() {
         // 🔥 FILTRER UNIQUEMENT les commandes LIVRAISON en attente
         res = await privateApi.get(`/api/commandes/point-de-vente/${activePointDeVente.id}/en-attente`);
         const commandesEnAttente = (res.data || [])
-          .filter(cmd => cmd.modeRetrait === 'LIVRAISON') // Filtrer uniquement LIVRAISON
+          .filter(cmd => cmd.typePaiement === 'LIVRAISON') // Filtrer sur typePaiement pour les livraisons
           .map(cmd => ({
             // Transformer les commandes en format compatible avec l'UI existant
             id: cmd.id,
@@ -107,6 +119,10 @@ export default function LivraisonList() {
   React.useEffect(() => {
     loadData();
   }, [loadData]);
+
+  React.useEffect(() => {
+    loadCaisseStatus();
+  }, [loadCaisseStatus]);
 
   const [stepperOpen, setStepperOpen] = React.useState(false);
   const [selectedVente, setSelectedVente] = React.useState(null);
@@ -184,13 +200,16 @@ export default function LivraisonList() {
       // 📍 SUR PLACE : Validation directe de la commande
       if (modeRetrait === 'RETRAIT') {
         try {
+          let venteId = payload.id;
+          
           // Transformer la commande en vente d'abord
           if (vente.estCommande) {
-            await privateApi.post(`/api/commandes/${vente.id}/transformer-en-vente`);
+            const resp = await privateApi.post(`/api/commandes/${vente.id}/transformer-en-vente`);
+            venteId = resp.data?.id || venteId;
           }
           
           // Puis dispatcher comme avant
-          await privateApi.post(`/api/ventes/${payload.venteId}/dispatcher`, {
+          await privateApi.post(`/api/ventes/${venteId}/dispatcher`, {
             casiersRendus: payload.casiersRendus || 0,
             bouteillesRendues: payload.bouteillesRendues || 0,
             montantPaye: payload.montantPaye || 0
@@ -231,14 +250,16 @@ export default function LivraisonList() {
       setOtpModalOpen(false);
       
       const { payload } = venteEnCoursValidation;
+      let venteId = payload.id;
       
       // Transformer la commande en vente si nécessaire
       if (venteEnCoursValidation.estCommande) {
-        await privateApi.post(`/api/commandes/${venteEnCoursValidation.id}/transformer-en-vente`);
+        const resp = await privateApi.post(`/api/commandes/${venteEnCoursValidation.id}/transformer-en-vente`);
+        venteId = resp.data?.id || venteId;
       }
       
       // Maintenant que l'OTP est validé, on peut dispatcher
-      await privateApi.post(`/api/ventes/${payload.venteId}/dispatcher`, {
+      await privateApi.post(`/api/ventes/${venteId}/dispatcher`, {
         casiersRendus: payload.casiersRendus || 0,
         bouteillesRendues: payload.bouteillesRendues || 0,
         montantPaye: payload.montantPaye || 0
@@ -271,7 +292,7 @@ export default function LivraisonList() {
       field: 'totalGeneral',
       headerName: 'Montant',
       width: 110,
-      renderCell: (params) => params.value ? parseFloat(params.value).toLocaleString('fr-FR') + ' FCFA' : ''
+      renderCell: (params) => params.value ? formatCurrency(params.value) : ''
     },
     {
       field: 'statutLivraison',
@@ -290,7 +311,7 @@ export default function LivraisonList() {
       getActions: ({ row }) => {
         const actions = [];
 
-        if (isLivreur) {
+        if (isLivreur && row.statutLivraison !== 'LIVREE' && caisseOuverte) {
           actions.push(
             <GridActionsCellItem
               icon={<LocalShippingIcon />}
@@ -301,16 +322,18 @@ export default function LivraisonList() {
           );
         }
 
-        // Action de gestion des casiers
-        actions.push(
-          <GridActionsCellItem
-            icon={<Inventory2Icon />}
-            label="Gérer casiers"
-            onClick={() => handleOpenCasiers(row)}
-            color="secondary"
-            title="Gérer les casiers/compensation"
-          />
-        );
+        // Action de gestion des casiers - seulement si caisse ouverte et pas déjà livrée
+        if (caisseOuverte && row.statutLivraison !== 'LIVREE') {
+          actions.push(
+            <GridActionsCellItem
+              icon={<Inventory2Icon />}
+              label="Gérer casiers"
+              onClick={() => handleOpenCasiers(row)}
+              color="secondary"
+              title="Gérer les casiers/compensation"
+            />
+          );
+        }
 
         if (isLivreur || isGerant) {
           actions.push(<PrintReceiptButton venteId={row.id} size="small" />);
@@ -323,57 +346,106 @@ export default function LivraisonList() {
 
   const renderMobileView = () => {
     return (
-      <Stack spacing={2} sx={{ mt: 2 }}>
-        {rows.map((row) => (
-          <Card key={row.id} sx={{ borderRadius: 2, boxShadow: 1 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Vente #{row.id}</Typography>
-                <Box>
-                  {isLivreur && (
-                    <IconButton size="small" color="primary" onClick={() => handleValidate(row)}>
-                      <LocalShippingIcon fontSize="small" />
-                    </IconButton>
-                  )}
-                  {showDebugButton || isGerant ? (
-                    <IconButton 
-                      size="small" 
-                      color="secondary" 
-                      onClick={() => handleOpenCasiers(row)}
-                      sx={{ ml: isLivreur ? 1 : 0 }}
-                    >
-                      <Inventory2Icon fontSize="small" />
-                    </IconButton>
-                  ) : null}
-                  {(isLivreur || isGerant) && (
-                    <Box component="span" sx={{ ml: (isGerant || isLivreur) ? 1 : 0 }}>
-                      <PrintReceiptButton venteId={row.id} size="small" />
+      <Stack spacing={1.5} sx={{ mt: 2, px: 0.5 }}>
+        {rows.map((row) => {
+          const montant = Number(row.totalGeneral ?? row.montantTotal ?? row.totalCommande ?? row.montant ?? 0);
+          const client = row.nomClient || row.clientNom || row.client?.raisonsociale || row.client?.nom || 'Client';
+          const date = row.dateCommande || row.dateVente || row.createdAt;
+          const statut = row.statutLivraison === 'NON_LIVREE' ? 'NON LIVREE' : (row.statutLivraison || row.statutCommande || 'NON LIVREE');
+
+          return (
+            <Card
+              key={row.id}
+              sx={{
+                width: '100%',
+                borderRadius: 3,
+                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.10)',
+                border: '1px solid rgba(15, 23, 42, 0.08)',
+                bgcolor: '#fff',
+                overflow: 'hidden'
+              }}
+            >
+              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                <Stack spacing={1.4}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 800,
+                      color: '#0f172a',
+                      fontSize: '1rem',
+                      lineHeight: 1.2,
+                      wordBreak: 'break-word'
+                    }}
+                  >
+                    Livraison #{row.id}
+                  </Typography>
+
+                  <Stack spacing={0.9}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, minWidth: 0 }}>
+                      <Typography component="span" sx={{ width: 22, flexShrink: 0 }}>👤</Typography>
+                      <Typography sx={{ fontSize: '0.92rem', fontWeight: 600, color: '#111827', minWidth: 0, overflowWrap: 'anywhere' }}>
+                        {client}
+                      </Typography>
                     </Box>
-                  )}
-                </Box>
-              </Box>
-              <Divider sx={{ my: 1 }} />
-              <Grid container spacing={1}>
-                <Grid item xs={6}>
-                  <Typography variant="caption" color="textSecondary">Client</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.clientNom}</Typography>
-                </Grid>
-                <Grid item xs={6} sx={{ textAlign: 'right' }}>
-                  <Typography variant="caption" color="textSecondary">Montant</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{parseFloat(row.montant || 0).toLocaleString('fr-FR')} FCFA</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="caption" color="textSecondary">Date</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDateCI(row.dateVente)}</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="caption" color="textSecondary">Etat livraison</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.statutLivraison}</Typography>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        ))}
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                      <Typography component="span" sx={{ width: 22, flexShrink: 0 }}>📅</Typography>
+                      <Typography sx={{ fontSize: '0.9rem', color: '#374151', minWidth: 0 }}>
+                        {formatDateCI(date)}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                      <Typography component="span" sx={{ width: 22, flexShrink: 0 }}>💰</Typography>
+                      <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f766e', minWidth: 0 }}>
+                        {formatCurrency(montant)}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                      <Typography component="span" sx={{ width: 22, flexShrink: 0 }}>🚚</Typography>
+                      <Typography sx={{ fontSize: '0.86rem', fontWeight: 800, color: statut === 'LIVREE' ? '#15803d' : '#b45309', minWidth: 0 }}>
+                        {statut}
+                      </Typography>
+                    </Box>
+                  </Stack>
+
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ pt: 0.5 }}>
+                    {caisseOuverte && row.statutLivraison !== 'LIVREE' && (
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<Inventory2Icon />}
+                        onClick={() => handleOpenCasiers(row)}
+                        sx={{
+                          minHeight: 46,
+                          borderRadius: 2,
+                          fontWeight: 800,
+                          fontSize: '0.9rem',
+                          bgcolor: '#1d4ed8',
+                          '&:hover': { bgcolor: '#1e40af' }
+                        }}
+                      >
+                        Gérer casiers
+                      </Button>
+                    )}
+
+                    {isLivreur && row.statutLivraison !== 'LIVREE' && caisseOuverte && (
+                      <Button
+                        variant="outlined"
+                        startIcon={<LocalShippingIcon />}
+                        onClick={() => handleValidate(row)}
+                        sx={{ minHeight: 42, borderRadius: 2, fontWeight: 700, whiteSpace: 'nowrap' }}
+                      >
+                        OTP
+                      </Button>
+                    )}
+                  </Stack>
+                </Stack>
+              </CardContent>
+            </Card>
+          );
+        })}
       </Stack>
     );
   };
@@ -399,9 +471,19 @@ export default function LivraisonList() {
     >
       <Box sx={{ width: '100%', mt: 2 }}>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {isMobile ? (
-          renderMobileView()
-        ) : (
+        {!caisseOuverte && (
+          <Alert severity="warning" sx={{ mb: 2 }} action={
+            <Button color="inherit" size="small" onClick={() => navigate('/accueil/caisse/ouverture', { state: { returnUrl: '/accueil/livraisons', commandeId: commandeIdFromNavigation } })}>
+              Ouvrir Caisse
+            </Button>
+          }>
+            ⚠️ La caisse est fermée. Ouvrez-la pour pouvoir livrer les commandes.
+          </Alert>
+        )}
+        <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+          {renderMobileView()}
+        </Box>
+        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
           <Box sx={{ height: 650, width: '100%' }}>
             <DataGrid
               rows={rows}
@@ -416,7 +498,7 @@ export default function LivraisonList() {
               }}
             />
           </Box>
-        )}
+        </Box>
       </Box>
     </PageContainer>
     <LivraisonStepperModal
@@ -454,6 +536,7 @@ export default function LivraisonList() {
       }}
       clientNom={clientNomForCasiers}
       ventesCasiers={ventesCasiers}
+      defaultCreditMode={true}   // Depuis la page livraisons : par défaut on considère qu'on ne reçoit rien en cash
     />
     </>
   );

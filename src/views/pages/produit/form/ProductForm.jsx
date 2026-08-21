@@ -41,7 +41,7 @@ export default function ProductForm({
   const openDialog = (type, label) => {
     setDialog({ type, label });
     setNewLibelle("");
-    setCreateError("");
+    setCreateError("")
   };
 
   const closeDialog = () => {

@@ -68,8 +68,9 @@ export async function sendOTP(phoneNumber) {
       initRecaptcha();
     }
     
-    // Pour le test local : accepter 123456 directement
-    if (phoneNumber === '+2250708404050') {
+    // Mode test: si le numéro correspond à VITE_TEST_PHONE, accepter directement 123456
+    const testPhone = import.meta.env.VITE_TEST_PHONE;
+    if (testPhone && phoneNumber === testPhone) {
       return {
         success: true,
         message: 'Code test: utilisez 123456',
@@ -118,13 +119,14 @@ export async function sendOTP(phoneNumber) {
 export async function verifyOTP(code) {
   try {
     // Mode test pour le numéro de test
+    const testPhone = import.meta.env.VITE_TEST_PHONE;
     if (confirmationResult === null && code === '123456') {
       console.log('✅ Code test accepté (123456)');
       return {
         success: true,
         message: 'Connexion test réussie',
         idToken: 'test_token_' + Date.now(),
-        phoneNumber: '+2250708404050',
+        phoneNumber: testPhone || '',
         isTestMode: true
       };
     }

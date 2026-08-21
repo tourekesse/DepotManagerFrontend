@@ -32,6 +32,9 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [notActivated, setNotActivated] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMsg, setResendMsg] = useState(null);
 
   const { login } = useUser();
   const [query] = useSearchParams();
@@ -59,6 +62,8 @@ export default function LoginPage() {
         const apiResponse = res.data;
 
         localStorage.setItem("token", apiResponse.token);
+        localStorage.setItem("userId", apiResponse.userId);
+        localStorage.setItem("role", apiResponse.role);
 
         const mappedUser = {
           ...apiResponse,
@@ -77,11 +82,26 @@ export default function LoginPage() {
 
       setErrorMsg(res.data.message || "Connexion échouée.");
     } catch (err) {
+      if (err.response && err.response.status === 403 &&
+          err.response.data?.code === "ACCOUNT_NOT_ACTIVATED") {
+        setNotActivated(true);
+        setResendMsg(null);
+        setErrorMsg(
+          err.response.data.message ||
+            "Votre compte n'est pas encore activé. Cliquez sur le lien de vérification reçu par e-mail."
+        );
+        return;
+      }
+
       if (err.response && err.response.status === 428) {
+        const data = err.response.data;
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+        }
         localStorage.setItem(
           "dmUser",
           JSON.stringify({
-            userId: err.response.data.userId,
+            userId: data.userId,
             onboardingRequired: true,
           })
         );
@@ -93,6 +113,25 @@ export default function LoginPage() {
       setErrorMsg("Email ou mot de passe incorrect.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email.trim()) {
+      setResendMsg({ type: "error", text: "Saisissez votre e-mail pour renvoyer le lien." });
+      return;
+    }
+    setResending(true);
+    setResendMsg(null);
+    try {
+      await publicApi.post("/api/auth/resend-activation", { email });
+      setResendMsg({ type: "success", text: "Un nouveau lien d'activation a été envoyé. Vérifiez votre boîte mail." });
+      setNotActivated(false);
+      setErrorMsg("");
+    } catch (err) {
+      setResendMsg({ type: "error", text: err.response?.data?.message || "Impossible de renvoyer le lien." });
+    } finally {
+      setResending(false);
     }
   };
 
@@ -243,6 +282,28 @@ export default function LoginPage() {
                     onClose={() => setErrorMsg("")}
                   >
                     {errorMsg}
+                    {notActivated && (
+                      <Button
+                        size="small"
+                        variant="text"
+                        color="inherit"
+                        sx={{ mt: 1, fontWeight: 700, textTransform: "none" }}
+                        onClick={handleResend}
+                        disabled={resending}
+                      >
+                        {resending ? "Envoi..." : "Renvoyer le lien d'activation"}
+                      </Button>
+                    )}
+                  </Alert>
+                )}
+
+                {resendMsg && (
+                  <Alert
+                    severity={resendMsg.type}
+                    sx={{ mb: 3 }}
+                    onClose={() => setResendMsg(null)}
+                  >
+                    {resendMsg.text}
                   </Alert>
                 )}
 
@@ -301,6 +362,20 @@ export default function LoginPage() {
                     }}
                   />
 
+                  <Box sx={{ mt: -1.5, mb: 2.5, textAlign: "right" }}>
+                    <Link
+                      to="/forgot-password"
+                      style={{
+                        color: "#6A1B9A",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        fontSize: 14,
+                      }}
+                    >
+                      Mot de passe oublié ?
+                    </Link>
+                  </Box>
+
                   <Button
                     type="submit"
                     variant="contained"
@@ -321,22 +396,6 @@ export default function LoginPage() {
 
                 {/* Liens */}
                 <Box sx={{ mt: 3, textAlign: "center" }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Connexion par téléphone ?{" "}
-                    <Link
-                      to="/login-otp"
-                      style={{
-                        color: "#6A1B9A",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                      }}
-                    >
-                      Code OTP
-                    </Link>
-                  </Typography>
-                </Box>
-
-                <Box sx={{ mt: 2, textAlign: "center" }}>
                   <Typography variant="body2" color="text.secondary">
                     Pas encore de compte ?{" "}
                     <Link

@@ -10,10 +10,12 @@ import {
   Button,
   Chip,
 } from "@mui/material";
-import { Store, User, PlayCircle, Package, Truck, Wallet, ChevronRight } from "lucide-react";
+import { Store, PlayCircle, Package, Truck, Wallet, ChevronRight } from "lucide-react";
+import { getUserCountry } from "../../config/countries";
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const userCountry = getUserCountry();
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#FFFFFF" }}>
@@ -57,7 +59,7 @@ export default function HomePage() {
       <Container maxWidth="lg" sx={{ py: 8 }}>
         <Grid container spacing={4}>
           {/* Card 1 : Accès Entreprise */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Card
               onClick={() => navigate("/login")}
               sx={{
@@ -113,65 +115,8 @@ export default function HomePage() {
             </Card>
           </Grid>
 
-          {/* Card 2 : Espace Client */}
-          <Grid item xs={12} md={4}>
-            <Card
-              onClick={() => navigate("/login-client")}
-              sx={{
-                height: "100%",
-                cursor: "pointer",
-                borderRadius: 3,
-                border: "1px solid #e0e0e0",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  transform: "translateY(-8px)",
-                  boxShadow: "0 20px 60px rgba(106, 27, 154, 0.15)",
-                  borderColor: "#6A1B9A",
-                },
-              }}
-            >
-              <CardContent sx={{ p: 4.5, textAlign: "center" }}>
-                <Box
-                  sx={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: "50%",
-                    bgcolor: "#f3e5f5",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mx: "auto",
-                    mb: 3,
-                  }}
-                >
-                  <User size={40} color="#6A1B9A" strokeWidth={1.5} />
-                </Box>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: "#1a1a2e" }}>
-                  Espace Client
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 4, lineHeight: 1.8 }}>
-                  Suivez vos commandes, livraisons et validations en temps réel depuis votre téléphone.
-                </Typography>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  endIcon={<ChevronRight size={20} />}
-                  sx={{
-                    bgcolor: "#6A1B9A",
-                    py: 1.5,
-                    fontWeight: 700,
-                    "&:hover": { bgcolor: "#7E57C2" },
-                  }}
-                >
-                  Continuer
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-
           {/* Card 3 : Version d'essai */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Card
               onClick={() => navigate("/essai")}
               sx={{
@@ -334,7 +279,7 @@ export default function HomePage() {
       {/* Footer */}
       <Box sx={{ py: 5, textAlign: "center", borderTop: "1px solid #e0e0e0" }}>
         <Typography variant="body1" color="text.secondary">
-          © 2026 DepotManager — Logiciel de gestion pour dépôts de boissons en Côte d'Ivoire
+          © 2026 DepotManager — Logiciel de gestion pour dépôts de boissons en {userCountry.name}
         </Typography>
       </Box>
     </Box>

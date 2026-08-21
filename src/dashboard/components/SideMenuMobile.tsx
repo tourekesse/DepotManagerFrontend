@@ -1,14 +1,17 @@
+import * as React from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Drawer, { drawerClasses } from '@mui/material/Drawer';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import MenuButton from './MenuButton';
 import MenuContent from './MenuContent';
 import CardAlert from './CardAlert';
+import { useUser } from '../../context/UserContext';
 
 interface SideMenuMobileProps {
   open: boolean | undefined;
@@ -16,6 +19,8 @@ interface SideMenuMobileProps {
 }
 
 export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobileProps) {
+  const { user, getDisplayName, activePointDeVente } = useUser();
+  
   return (
     <Drawer
       anchor="right"
@@ -42,18 +47,29 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
           >
             <Avatar
               sizes="small"
-              alt="Riley Carter"
-              src="/static/images/avatar/7.jpg"
+              alt={getDisplayName()}
               sx={{ width: 24, height: 24 }}
-            />
+            >
+              {getDisplayName().charAt(0)}
+            </Avatar>
             <Typography component="p" variant="h6">
-              Riley Carter
+              {getDisplayName()}
             </Typography>
           </Stack>
           <MenuButton showBadge>
             <NotificationsRoundedIcon />
           </MenuButton>
         </Stack>
+        {user && activePointDeVente && (
+          <Stack sx={{ px: 2, pb: 1 }}>
+            <Chip
+              size="small"
+              label={activePointDeVente.nom}
+              variant="outlined"
+              sx={{ fontSize: '0.7rem', maxWidth: '200px' }}
+            />
+          </Stack>
+        )}
         <Divider />
         <Stack sx={{ flexGrow: 1 }}>
           <MenuContent />

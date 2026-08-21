@@ -12,6 +12,7 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import AddIcon from '@mui/icons-material/Add';
 import HistoryIcon from '@mui/icons-material/History';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 import DashboardSidebarContext from '../context/DashboardSidebarContext';
 import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from '../constants';
@@ -113,6 +114,7 @@ export default function DashboardSidebar({
       case 'Inventory2': return <Inventory2Icon />;
       case 'Add': return <AddIcon />;
       case 'History': return <HistoryIcon />;
+      case 'Help': return <HelpOutlineIcon />;
       default: return <DashboardIcon />;
     }
   };
@@ -156,6 +158,16 @@ export default function DashboardSidebar({
                 selected={!!matchPath(item.path + '/*', pathname) || pathname === item.path}
               />
             ))}
+
+            {/* Centre d'aide - toujours visible */}
+            <DashboardSidebarPageItem
+              key="documentation"
+              id="documentation"
+              title="Centre d'aide"
+              icon={<HelpOutlineIcon />}
+              href="/accueil/documentation"
+              selected={!!matchPath('/accueil/documentation/*', pathname) || pathname === '/accueil/documentation'}
+            />
           </List>
         </Box>
       </>

@@ -1,0 +1,224 @@
+[
+  {
+    "id": "produit-creer",
+    "question": "Comment créer un nouveau produit ?",
+    "answer": "Allez dans Produits > Nouveau produit. Remplissez la désignation, la marque, le format, le prix et le stock initial.",
+    "tags": ["produit", "créer", "ajouter", "nouveau", "création"],
+    "path": "/accueil/produits/nouveau",
+    "category": "produits"
+  },
+  {
+    "id": "produit-rapide",
+    "question": "Comment créer des produits en lot ?",
+    "answer": "Utilisez la création rapide dans Produits. Vous pouvez ajouter plusieurs produits à la fois avec le formulaire de création rapide.",
+    "tags": ["produit", "rapide", "lot", "multiple", "bulk"],
+    "path": "/accueil/produits/nouveau",
+    "category": "produits"
+  },
+  {
+    "id": "produit-importer",
+    "question": "Comment importer des produits ?",
+    "answer": "Allez dans Produits > Importer. Vous pouvez importer une liste de produits depuis un fichier Excel ou CSV.",
+    "tags": ["produit", "importer", "import", "excel", "csv", "fichier"],
+    "path": "/accueil/produits/import",
+    "category": "produits"
+  },
+  {
+    "id": "produit-modifier",
+    "question": "Comment modifier un produit existant ?",
+    "answer": "Allez dans Produits, cliquez sur le produit à modifier, puis cliquez sur Modifier. Vous pouvez changer le prix, le stock, la désignation, etc.",
+    "tags": ["produit", "modifier", "éditer", "edit", "changer", "mettre à jour"],
+    "category": "produits"
+  },
+  {
+    "id": "commande-passer",
+    "question": "Comment passer une commande ?",
+    "answer": "Allez dans Commandes > Nouvelle commande. Sélectionnez les produits, les quantités, choisissez le client et validez. La commande sera envoyée au dépôt.",
+    "tags": ["commande", "passer", "nouvelle", "créer", "commander"],
+    "path": "/accueil/commandes/nouveau",
+    "category": "commandes"
+  },
+  {
+    "id": "commande-historique",
+    "question": "Comment voir l'historique de mes commandes ?",
+    "answer": "Allez dans Mes Commandes pour voir toutes vos commandes passées. Vous pouvez filtrer par date, statut ou client.",
+    "tags": ["commande", "historique", "mes", "passées", "archives"],
+    "path": "/accueil/mes-commandes",
+    "category": "commandes"
+  },
+  {
+    "id": "commande-valider",
+    "question": "Comment valider une commande en attente ?",
+    "answer": "Allez dans Commandes à valider. Vous verrez toutes les commandes en attente. Cliquez sur Valider pour les approuver.",
+    "tags": ["commande", "valider", "attente", "approuver", "en attente"],
+    "path": "/accueil/commandes-a-valider",
+    "category": "commandes"
+  },
+  {
+    "id": "commande-retrait",
+    "question": "Comment gérer les commandes à retirer ?",
+    "answer": "Allez dans Commandes en attente de retrait. Vous pouvez préparer la commande et notifier le client que c'est prêt.",
+    "tags": ["commande", "retrait", "préparer", "prêt", "client"],
+    "path": "/accueil/commandes-a-retirer",
+    "category": "commandes"
+  },
+  {
+    "id": "vente-enregistrer",
+    "question": "Comment enregistrer une vente ?",
+    "answer": "Utilisez l'interface de vente dans Commandes > Nouvelle commande. Scannez ou recherchez les produits, ajustez les quantités et validez.",
+    "tags": ["vente", "enregistrer", "vendre", "caisse", "paiement"],
+    "path": "/accueil/commandes/nouveau",
+    "category": "ventes"
+  },
+  {
+    "id": "livraison-assigner",
+    "question": "Comment assigner un livreur à une livraison ?",
+    "answer": "Allez dans Livraisons, cliquez sur la livraison souhaitée, puis sélectionnez Assigner un livreur. Choisissez le livreur disponible.",
+    "tags": ["livraison", "assigner", "livreur", "affecter", "attribuer"],
+    "path": "/accueil/livraisons",
+    "category": "livraisons"
+  },
+  {
+    "id": "livraison-suivre",
+    "question": "Comment suivre une livraison en temps réel ?",
+    "answer": "Allez dans Suivi GPS pour voir la position de tous vos livreurs en temps réel sur la carte. Les positions sont mises à jour toutes les 10 secondes.",
+    "tags": ["livraison", "suivi", "gps", "temps réel", "carte", "position"],
+    "path": "/accueil/gps-tracking",
+    "category": "livraisons"
+  },
+  {
+    "id": "livraison-historique",
+    "question": "Comment voir l'historique des livraisons ?",
+    "answer": "Allez dans Livraisons > Historique pour voir toutes les livraisons terminées avec les détails de chaque tournée.",
+    "tags": ["livraison", "historique", "passées", "terminées", "archives"],
+    "path": "/accueil/livraisons/historique",
+    "category": "livraisons"
+  },
+  {
+    "id": "livraison-otp",
+    "question": "Comment fonctionne la confirmation par OTP ?",
+    "answer": "Le client reçoit un code OTP par SMS à la livraison. Le livreur saisit ce code dans l'application pour confirmer la réception.",
+    "tags": ["livraison", "otp", "confirmation", "code", "sms", "réception"],
+    "category": "livraisons"
+  },
+  {
+    "id": "caisse-ouverture",
+    "question": "Comment ouvrir la caisse ?",
+    "answer": "Allez dans Caisse > Ouverture. Saisissez le montant initial en caisse (généralement le montant de la fermeture précédente).",
+    "tags": ["caisse", "ouverture", "ouvrir", "montant", "initial", "début"],
+    "path": "/accueil/caisse/ouverture",
+    "category": "caisse"
+  },
+  {
+    "id": "caisse-fermeture",
+    "question": "Comment fermer la caisse ?",
+    "answer": "Allez dans Caisse > Fermeture. Saisissez le montant réel en caisse. Le système compare avec le montant théorique et affiche l'écart.",
+    "tags": ["caisse", "fermeture", "fermer", "clôture", "écart", "fin"],
+    "path": "/accueil/caisse/fermeture",
+    "category": "caisse"
+  },
+  {
+    "id": "caisse-journal",
+    "question": "Comment voir le journal de caisse ?",
+    "answer": "Allez dans Caisse > Journal pour voir l'historique de toutes les opérations : ouvertures, fermetures, mouvements et ajustements.",
+    "tags": ["caisse", "journal", "historique", "opérations", "mouvements"],
+    "path": "/accueil/caisse/journal",
+    "category": "caisse"
+  },
+  {
+    "id": "caisse-mouvement",
+    "question": "Comment enregistrer un mouvement de caisse ?",
+    "answer": "Allez dans Caisse > Mouvement. Indiquez le type (entrée/sortie), le montant et le motif. Utile pour les dépenses ou apports.",
+    "tags": ["caisse", "mouvement", "entrée", "sortie", "dépense", "apport"],
+    "path": "/accueil/caisse/mouvement",
+    "category": "caisse"
+  },
+  {
+    "id": "client-ajuster",
+    "question": "Comment ajuster le solde d'un client ?",
+    "answer": "Allez dans Caisse > Ajuster client. Sélectionnez le client, le type d'ajustement (liquide ou emballage) et le nouveau montant.",
+    "tags": ["client", "ajuster", "solde", "crédit", "dette", "montant"],
+    "path": "/accueil/caisse/ajuster-client",
+    "category": "clients"
+  },
+  {
+    "id": "client-creer",
+    "question": "Comment créer un nouveau client ?",
+    "answer": "Allez dans Clients, cliquez sur Ajouter. Remplissez le nom, téléphone, adresse et solde initial. Vous pouvez aussi définir sa position GPS.",
+    "tags": ["client", "créer", "ajouter", "nouveau", "inscription"],
+    "path": "/accueil/clients",
+    "category": "clients"
+  },
+  {
+    "id": "stock-ajuster",
+    "question": "Comment ajuster le stock de casiers ?",
+    "answer": "Allez dans Ajustement stock > Casiers. Sélectionnez le produit et indiquez la quantité (+ entrée / - sortie).",
+    "tags": ["stock", "ajuster", "casier", "inventaire", "quantité"],
+    "path": "/accueil/stocks/ajustement",
+    "category": "stocks"
+  },
+  {
+    "id": "livreur-creer",
+    "question": "Comment ajouter un collaborateur ?",
+    "answer": "Allez dans Collaborateurs > Nouveau collaborateur. Remplissez les informations. Le collaborateur recevra un lien pour installer l'application mobile.",
+    "tags": ["collaborateur", "créer", "ajouter", "nouveau", "inscription"],
+    "path": "/accueil/utilisateur/nouveau",
+    "category": "livreurs"
+  },
+  {
+    "id": "approvisionnement",
+    "question": "Comment gérer les approvisionnements ?",
+    "answer": "Allez dans Approvisionnement pour voir les fournisseurs, passer des commandes fournisseur et réceptionner les marchandises.",
+    "tags": ["approvisionnement", "fournisseur", "achat", "réception", "marchandise"],
+    "path": "/accueil/approvisionnement",
+    "category": "approvisionnement"
+  },
+  {
+    "id": "abonnement-voir",
+    "question": "Comment voir mon abonnement ?",
+    "answer": "Allez dans Mon Abonnement pour voir votre formule actuelle, la date d'expiration et les options disponibles.",
+    "tags": ["abonnement", "mon", "formule", "plan", "expiration"],
+    "path": "/accueil/mon-abonnement",
+    "category": "abonnements"
+  },
+  {
+    "id": "abonnement-payer",
+    "question": "Comment payer ou renouveler mon abonnement ?",
+    "answer": "Allez dans Abonnements > Payer. Choisissez la formule et le mode de paiement. Vous serez notifié à l'activation.",
+    "tags": ["abonnement", "payer", "renouveler", "paiement", "activer"],
+    "path": "/accueil/abonnements/payer",
+    "category": "abonnements"
+  },
+  {
+    "id": "livreur-mes",
+    "question": "Comment voir mes livraisons en tant que livreur ?",
+    "answer": "Connectez-vous avec votre compte livreur. Allez dans Mes livraisons pour voir les tournées qui vous sont assignées.",
+    "tags": ["livreur", "mes", "livraisons", "tournées", "assignées"],
+    "path": "/accueil/livraisons/mes-livraisons",
+    "category": "livreurs"
+  },
+  {
+    "id": "bar-vente",
+    "question": "Comment enregistrer une vente au bar ?",
+    "answer": "Allez dans Bar > Ventes. Sélectionnez les produits du bar, ajoutez-les au panier et validez la vente.",
+    "tags": ["bar", "vente", "vendre", "consommation", "sur place"],
+    "path": "/accueil/bar/ventes",
+    "category": "bar"
+  },
+  {
+    "id": "bar-inventaire",
+    "question": "Comment faire l'inventaire du bar ?",
+    "answer": "Allez dans Bar > Inventaire. Vous pouvez voir les stocks actuels et enregistrer les ajustements.",
+    "tags": ["bar", "inventaire", "stock", "ajustement"],
+    "path": "/accueil/bar/inventaire",
+    "category": "bar"
+  },
+  {
+    "id": "gerant-creer",
+    "question": "Comment créer un gérant de bar ?",
+    "answer": "Allez dans Bar > Créer un gérant. Remplissez les informations du gérant. Il pourra ensuite gérer son espace bar.",
+    "tags": ["gérant", "bar", "créer", "manager", "personnel"],
+    "path": "/accueil/bar/gerants/nouveau",
+    "category": "bar"
+  }
+]

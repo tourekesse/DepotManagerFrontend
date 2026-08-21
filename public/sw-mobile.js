@@ -1,7 +1,7 @@
 // Service Worker optimisé pour mobile
 // public/sw-mobile.js
 
-const CACHE_VERSION = 'v2.0.0';
+const CACHE_VERSION = 'v2.0.2';
 const STATIC_CACHE = `depotmanager-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `depotmanager-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `depotmanager-images-${CACHE_VERSION}`;
@@ -34,6 +34,7 @@ const COMMON_IMAGES = [
 // Installation avec cache stratégique
 self.addEventListener('install', (event) => {
   console.log('🔧 Mobile Service Worker installing...');
+  self.skipWaiting();
   
   event.waitUntil(
     caches.open(STATIC_CACHE)
@@ -81,6 +82,11 @@ self.addEventListener('fetch', (event) => {
   
   // Ignorer les requêtes non-GET
   if (request.method !== 'GET') return;
+
+  if (request.mode === 'navigate') {
+    event.respondWith(networkOnlyNavigation(request));
+    return;
+  }
   
   // Stratégie 1: Cache First pour les assets statiques
   if (isStaticAsset(request.url)) {
@@ -138,6 +144,14 @@ async function cacheFirstStrategy(request, cacheName) {
   }
 }
 
+async function networkOnlyNavigation(request) {
+  try {
+    return await fetch(request);
+  } catch (error) {
+    return caches.match('/') || new Response('Application indisponible hors ligne', { status: 503 });
+  }
+}
+
 // Network First Strategy (pour les API)
 async function networkFirstStrategy(request, cacheName) {
   const cache = await caches.open(cacheName);
@@ -146,25 +160,17 @@ async function networkFirstStrategy(request, cacheName) {
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
-      // Mettre en cache les réponses API réussies (max 5 minutes)
-      const responseClone = networkResponse.clone();
-      responseClone.headers.set('sw-cache-date', new Date().toISOString());
-      await cache.put(request, responseClone);
+      await cache.put(request, networkResponse.clone());
     }
     
     return networkResponse;
   } catch (error) {
-    console.log('📱 Network failed, trying cache:', request.url);
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
-      // Ajouter un header pour indiquer que c'est du cache
-      const cachedResponseClone = cachedResponse.clone();
-      cachedResponseClone.headers.set('sw-cached', 'true');
-      return cachedResponseClone;
+      return cachedResponse;
     }
     
-    // Réponse offline pour les API critiques
     if (request.url.includes('/api/produits')) {
       return new Response(JSON.stringify({
         error: 'Hors ligne - Données en cache',
@@ -172,10 +178,7 @@ async function networkFirstStrategy(request, cacheName) {
         cached: true
       }), {
         status: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          'sw-cached': 'true'
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
     }
     
@@ -202,11 +205,12 @@ async function staleWhileRevalidate(request, cacheName) {
 
 // Helper functions
 function isStaticAsset(url) {
-  return url.includes('.css') || 
-         url.includes('.js') || 
-         url.includes('.woff') || 
-         url.includes('.woff2') ||
-         CRITICAL_ASSETS.some(asset => url.includes(asset));
+  const pathname = new URL(url, location.origin).pathname;
+  return pathname.endsWith('.css') || 
+         pathname.endsWith('.js') || 
+         pathname.endsWith('.woff') || 
+         pathname.endsWith('.woff2') ||
+         CRITICAL_ASSETS.some(asset => pathname === asset);
 }
 
 function isImageRequest(url) {
@@ -280,7 +284,7 @@ async function syncMobileData() {
 
 // Optimisation de la mémoire
 self.addEventListener('message', (event) => {
-  if (event.data === 'skipWaiting') {
+  if (event.data === 'skipWaiting' || event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
   

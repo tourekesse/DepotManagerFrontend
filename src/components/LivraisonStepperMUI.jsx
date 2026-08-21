@@ -6,6 +6,7 @@ import StepButton from '@mui/material/StepButton';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import PropTypes from 'prop-types';
+import { formatCurrency } from '../utils/currencyUtils';
 
 const steps = ['Récapitulatif', 'Saisie manuelle', 'Confirmation'];
 
@@ -76,7 +77,7 @@ export default function LivraisonStepperMUI({ vente, onClose, onValidate }) {
       {/* Rappel synthétique de la commande */}
       <Box sx={{ mb: 2, p: 1, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
         <Typography variant="subtitle2" color="text.secondary">
-          Client : <b>{vente.clientNom}</b> &nbsp;|&nbsp; Montant : <b>{vente.montantTotal} FCFA</b> &nbsp;|&nbsp; Date : <b>{vente.dateVente}</b>
+          Client : <b>{vente.clientNom}</b> &nbsp;|&nbsp; Montant : <b>{formatCurrency(vente.montantTotal)}</b> &nbsp;|&nbsp; Date : <b>{vente.dateVente}</b>
         </Typography>
       </Box>
       <Stepper nonLinear activeStep={activeStep} sx={{ mb: 2 }}>
@@ -107,7 +108,7 @@ export default function LivraisonStepperMUI({ vente, onClose, onValidate }) {
                 <Typography variant="h6">Livraison de la vente #{vente.id}</Typography>
                 <Typography>Client : {vente.clientNom}</Typography>
                 <Typography>Date : {vente.dateVente}</Typography>
-                <Typography>Montant : {vente.montantTotal} FCFA</Typography>
+                <Typography>Montant : {formatCurrency(vente.montantTotal)}</Typography>
                 <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                   <Button variant="contained" onClick={handleComplete} disabled={loading}>Tous les vides rendus</Button>
                   <Button variant="outlined" onClick={handleNext}>Saisie manuelle</Button>

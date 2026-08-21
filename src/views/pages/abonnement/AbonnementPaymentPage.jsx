@@ -23,16 +23,20 @@ import SmartphoneIcon from "@mui/icons-material/Smartphone";
 import PageContainer from "../../../crud-dashboard/components/PageContainer";
 import useNotifications from "../../../crud-dashboard/hooks/useNotifications/useNotifications";
 import { publicApi } from "../../../api/axios";
+import { getUserCountry } from "../../../config/countries";
+import { normalizePhoneInternational, formatPhoneDisplay, validatePhone as validatePhoneUtil, getPhoneExample } from "../../../utils/phoneUtils";
 
 const formatF = (n) => {
   if (n === null || n === undefined) return "0 F";
   const num = typeof n === "string" ? parseFloat(n) : n;
   if (isNaN(num)) return "0 F";
-  return num.toLocaleString("fr-CI", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " F";
+  const country = getUserCountry();
+  return num.toLocaleString(country.locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " " + country.currencySymbol;
 };
 
 export default function AbonnementPaymentPage() {
   const notifications = useNotifications();
+  const userCountry = getUserCountry();
   
   // États
   const [prix, setPrix] = React.useState(null);
@@ -52,7 +56,7 @@ export default function AbonnementPaymentPage() {
 
   const loadPrix = async () => {
     try {
-      const res = await publicApi.get("/api/abonnements/prix");
+      const res = await publicApi.get("/api/abonnements/prix?pays=" + userCountry.code);
       setPrix(res.data);
     } catch (err) {
       notifications.show("Erreur lors du chargement des prix", { severity: "error" });
@@ -86,10 +90,7 @@ export default function AbonnementPaymentPage() {
     }
 
     // Nettoyer le numéro
-    let cleanedPhone = telephone.replace(/\s/g, "");
-    if (!cleanedPhone.startsWith("225")) {
-      cleanedPhone = "225" + cleanedPhone;
-    }
+    const cleanedPhone = normalizePhoneInternational(telephone, userCountry.code);
 
     const clientId = localStorage.getItem("clientId");
     if (!clientId) {
@@ -104,7 +105,8 @@ export default function AbonnementPaymentPage() {
       const res = await publicApi.post("/api/abonnements/payer", {
         clientId: parseInt(clientId),
         type: typeAbonnement,
-        telephone: cleanedPhone
+        telephone: cleanedPhone,
+        pays: getUserCountry().code,
       });
 
       setResult(res.data);
@@ -231,7 +233,7 @@ export default function AbonnementPaymentPage() {
               <TextField
                 fullWidth
                 label="Numéro de téléphone Mobile Money"
-                placeholder="07 XX XX XX XX"
+                placeholder={`Ex: ${getPhoneExample(userCountry.code)}`}
                 value={telephone}
                 onChange={(e) => setTelephone(e.target.value)}
                 InputProps={{

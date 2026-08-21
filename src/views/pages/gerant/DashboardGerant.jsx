@@ -50,14 +50,9 @@ import {
 import { privateApi } from '../../../api/axios';
 import useActivePointDeVenteId from '../../../hooks/useActivePointDeVenteId';
 import InvitationModal from '../../../components/InvitationModal';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
-const formatMontant = (montant) => {
-  if (!montant || isNaN(montant)) return '0 FCFA';
-  return new Intl.NumberFormat('fr-FR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(montant) + ' FCFA';
-};
+const formatMontant = (montant) => formatCurrency(montant);
 
 // Dialog pour voir les détails d'une commande
 const CommandeDetailDialog = ({ open, commande, onClose, onValider, onModifier, onRefuser }) => {

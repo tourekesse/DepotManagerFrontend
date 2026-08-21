@@ -5,6 +5,6 @@ export async function fetchMenu(role, userId) {
   if (userId) params.userId = userId;
   else if (role) params.role = role;
 
-  const res = await privateApi.get("/api/menu", { params });
+  const res = await privateApi.get("/api/menus", { params });
   return res.data || [];
 }

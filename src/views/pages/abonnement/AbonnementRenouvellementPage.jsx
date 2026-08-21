@@ -27,6 +27,8 @@ import SmartphoneIcon from "@mui/icons-material/Smartphone";
 import PageContainer from "../../../crud-dashboard/components/PageContainer";
 import useNotifications from "../../../crud-dashboard/hooks/useNotifications/useNotifications";
 import { publicApi } from "../../../api/axios";
+import { getUserCountry } from "../../../config/countries";
+import { normalizePhoneInternational, getPhoneExample } from "../../../utils/phoneUtils";
 
 const formatF = (n) => {
   if (n === null || n === undefined) return "0 F";
@@ -53,6 +55,7 @@ const daysUntil = (dateStr) => {
 };
 
 export default function AbonnementRenouvellementPage() {
+  const userCountry = getUserCountry();
   const notifications = useNotifications();
   
   const [abonnement, setAbonnement] = React.useState(null);
@@ -122,7 +125,7 @@ export default function AbonnementRenouvellementPage() {
 
   const loadTarif = async (type) => {
     try {
-      const res = await publicApi.get(`/api/abonnements/tarif/${type}`);
+      const res = await publicApi.get(`/api/abonnements/tarif/${type}?pays=${userCountry.code}`);
       if (res.data) {
         setTarif(res.data);
       }
@@ -137,10 +140,7 @@ export default function AbonnementRenouvellementPage() {
       return;
     }
 
-    let cleanedPhone = telephone.replace(/\s/g, "");
-    if (!cleanedPhone.startsWith("225")) {
-      cleanedPhone = "225" + cleanedPhone;
-    }
+    const cleanedPhone = normalizePhoneInternational(telephone, userCountry.code);
 
     // Déterminer le clientId
     let currentClientId = clientId;
@@ -350,7 +350,7 @@ export default function AbonnementRenouvellementPage() {
                             12 mois
                           </Typography>
                           <Chip 
-                            label="-17%" 
+                            label={tarif?.reductionAnnuellePct ? `-${tarif.reductionAnnuellePct}%` : "-17%"} 
                             size="small" 
                             sx={{ 
                               bgcolor: "#673ab7", 
@@ -360,16 +360,13 @@ export default function AbonnementRenouvellementPage() {
                               height: "20px"
                             }} 
                           />
-                          <Typography variant="caption" color="success.main" sx={{ ml: 1, fontWeight: 600 }}>
-                            2 MOIS OFFERTS !
-                          </Typography>
                         </Box>
                         <Box sx={{ textAlign: "right" }}>
                           <Typography variant="body2" color="text.secondary" sx={{ textDecoration: "line-through" }}>
                             {formatF(getBasePrice() * 12)}
                           </Typography>
                           <Typography variant="h6" sx={{ fontWeight: 700, color: "#673ab7" }}>
-                            {formatF(getBasePrice() * 10)}
+                            {formatF(details.montant)}
                           </Typography>
                         </Box>
                       </Stack>
@@ -447,7 +444,7 @@ export default function AbonnementRenouvellementPage() {
                     size="small"
                     value={telephone}
                     onChange={(e) => setTelephone(e.target.value)}
-                    placeholder="07 XX XX XX XX"
+                    placeholder={`Ex: ${getPhoneExample(userCountry.code)}`}
                     sx={{ mt: 0.5 }}
                   />
                 </Box>

@@ -14,6 +14,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import { Add, Visibility, Check, Cancel } from '@mui/icons-material';
 import { privateApi } from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '../../utils/currencyUtils';
 
 const STATUT_COLORS = {
   EN_ATTENTE: 'warning',
@@ -86,13 +87,6 @@ const BonsReceptionPage = () => {
       setError(err.response?.data?.message || 'Erreur lors de l\'annulation');
       console.error(err);
     }
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount) + ' FCFA';
   };
 
   const columns = [

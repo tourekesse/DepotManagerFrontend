@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, TextField, Divider } from '@mui/material';
+import { formatCurrency } from '../../../utils/currencyUtils';
 
 // Groupes de liquides AVEC consignes (bières, sodas, malta)
 // IDs de la table groupeliquide : 11=BIERE, 13=SODA, 16=MALTA
@@ -68,7 +69,7 @@ export default function ConsignesSection({
       {/* Total emballage - Affiché juste après les consignes */}
       <Box sx={{ mt: 1.5, p: 1.5, bgcolor: '#e3f2fd', borderRadius: 2, border: '1px solid #90caf9' }}>
         <Typography variant="body2" sx={{ fontWeight: 700, color: '#1565c0' }}>
-          💰 Total emballage (indicatif) : {emballageTotal} FCFA
+          💰 Total emballage (indicatif) : {formatCurrency(emballageTotal)}
         </Typography>
         <Typography variant="caption" sx={{ color: '#666', display: 'block', mt: 0.5 }}>
           Calcul : ({prixBouteille || 0} × {nbreBouteillesParCasier || 0}) + {prixCasierPlastique || 0}

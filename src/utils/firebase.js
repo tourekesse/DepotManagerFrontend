@@ -1,5 +1,5 @@
 // 🔥 Firebase Configuration
-import { initializeApp, getApps } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 const firebaseConfig = {
@@ -36,7 +36,8 @@ if (!getApps().length) {
   }
 } else {
   console.log('🔥 Firebase déjà initialisé');
-  app = getApps()[0];
+  // Reuse existing app instance
+  app = getApp();
   if (isServiceWorkerSupported) {
     try {
       messaging = getMessaging(app);

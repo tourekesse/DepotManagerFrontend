@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 
 import { fetchProduitById } from "../../../api/produitsApi";
+import { formatCurrency } from "../../../utils/currencyUtils";
 
 export default function ProductShow() {
   const { productId } = useParams();
@@ -92,7 +93,7 @@ export default function ProductShow() {
                   Prix vente HT
                 </Typography>
                 <Typography>
-                  {produit.prixVenteHt} FCFA
+                  {formatCurrency(produit.prixVenteHt)}
                 </Typography>
               </Grid>
 

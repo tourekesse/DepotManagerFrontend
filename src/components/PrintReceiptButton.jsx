@@ -1,5 +1,7 @@
 import React from 'react';
 import { IconButton, Menu, MenuItem, ListItemIcon, ListItemText, CircularProgress, Dialog, DialogContent, useMediaQuery, useTheme } from '@mui/material';
+import { useContext } from 'react';
+import { useReceiptModal } from '../contexts/ReceiptModalContext';
 import PrintIcon from '@mui/icons-material/Print';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import BluetoothIcon from '@mui/icons-material/Bluetooth';
@@ -12,8 +14,6 @@ export default function PrintReceiptButton({ venteId, size = 'medium' }) {
   const { printReceipt, isPrinting } = useBluetoothPrinter();
   const notifications = useNotifications();
   const [loading, setLoading] = React.useState(false);
-  const [pdfModalOpen, setPdfModalOpen] = React.useState(false);
-  const [pdfUrl, setPdfUrl] = React.useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -25,6 +25,8 @@ export default function PrintReceiptButton({ venteId, size = 'medium' }) {
     setAnchorEl(null);
   };
 
+  const { openReceipt } = useReceiptModal() || {};
+
   const handlePrintPDF = async () => {
     handleClose();
     try {
@@ -35,8 +37,9 @@ export default function PrintReceiptButton({ venteId, size = 'medium' }) {
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        setPdfUrl(url);
-        setPdfModalOpen(true);
+        if (openReceipt) {
+          openReceipt(url, `Votre facture de commande #${venteId}`);
+        }
       } else {
         notifications.show('Erreur génération PDF', { severity: 'error' });
       }
@@ -88,39 +91,7 @@ export default function PrintReceiptButton({ venteId, size = 'medium' }) {
           <ListItemText>Bluetooth 58mm</ListItemText>
         </MenuItem>
       </Menu>
-      <Dialog 
-        open={pdfModalOpen} 
-        onClose={() => setPdfModalOpen(false)}
-        maxWidth="md"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <DialogContent sx={{ p: 0, height: isMobile ? '100vh' : '80vh' }}>
-          <IconButton
-            onClick={() => setPdfModalOpen(false)}
-            sx={{ 
-              position: 'absolute', 
-              right: 8, 
-              top: 8, 
-              zIndex: 1,
-              bgcolor: 'rgba(255,255,255,0.8)'
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-          {pdfUrl && (
-            <iframe
-              src={pdfUrl}
-              style={{ 
-                width: '100%', 
-                height: '100%', 
-                border: 'none' 
-              }}
-              title="Reçu PDF"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Le partage se fait désormais via un modal global, persistant */}
     </>
   );
 }

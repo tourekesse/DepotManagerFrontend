@@ -30,6 +30,13 @@ import { useTheme, useMediaQuery } from "@mui/material";
 import { privateApi } from "../../../api/axios";
 import { getActivePointDeVenteId } from "../../../utils/pdv";
 import pushNotifications from "../../../utils/pushNotifications";
+import {
+  getCreePar,
+  getConnectedRole,
+  getConnectedClientId,
+  syncClientSession,
+  isClientBarUser,
+} from "../../../utils/sessionAuth";
 
 const CatalogueClientMobile = () => {
   const theme = useTheme();
@@ -86,6 +93,13 @@ const CatalogueClientMobile = () => {
   };
   
   /* =========================
+   SESSION CLIENT (dmUser / JWT → localStorage)
+   ========================= */
+  useEffect(() => {
+    syncClientSession();
+  }, []);
+
+  /* =========================
    PRODUITS (adapté bar / client)
    ========================= */
   useEffect(() => {
@@ -93,8 +107,7 @@ const CatalogueClientMobile = () => {
       setLoading(true);
       const pvId = getActivePointDeVenteId();
       const headers = pvId ? { "X-PV-ID": pvId } : {};
-      // Si un rôle client est présent, on tente d'abord le catalogue client
-      const role = (localStorage.getItem("role") || "").toUpperCase();
+      const role = getConnectedRole();
       const endpoints = role === "CLIENT_BAR"
         ? ["/api/produits/client/catalogue"]
         : ["/api/produits"];
@@ -126,16 +139,41 @@ const CatalogueClientMobile = () => {
    GESTION PANIER
    ========================= */
   const ajouterAuPanier = (boisson) => {
-    const qte = Math.max(1, itemQuantities[boisson.id] || 1);
+    const stockDisponible = boisson.stockInitial || 0;
+    
+    // Vérifier si le produit est en rupture de stock
+    if (stockDisponible <= 0) {
+      showNotification(`${boisson.designation} est en rupture de stock`, "error");
+      return;
+    }
+    
+    // Accepter les quantités décimales (ex: 2.5 casiers)
+    const qteDemandee = Math.max(0.5, parseFloat(itemQuantities[boisson.id]) || 1);
+    // Limiter à la quantité disponible
+    const qte = Math.min(qteDemandee, stockDisponible);
+    
+    if (qte !== qteDemandee) {
+      showNotification(`${stockDisponible} ${boisson.designation} disponible(s)`, "info");
+    }
+    
     const existantIndex = cart.findIndex(i => i.id === boisson.id);
     
     const consigne = (boisson.consigneBouteille || 0) * (boisson.nbBouteillesParCasier || 0) + (boisson.consigneCasier || 0);
+    
+    // Vérifier si on dépasserait le stock disponible en ajoutant au panier
+    if (existantIndex !== -1) {
+      const nouvelleQuantite = cart[existantIndex].quantite + qte;
+      if (nouvelleQuantite > stockDisponible) {
+        showNotification(`Stock insuffisant. Maximum ${stockDisponible} ${boisson.designation}`, "error");
+        return;
+      }
+    }
     
     if (existantIndex !== -1) {
       const newCart = [...cart];
       newCart[existantIndex] = {
         ...newCart[existantIndex],
-        quantite: newCart[existantIndex].quantite + qte
+        quantite: parseFloat((newCart[existantIndex].quantite + qte).toFixed(2))
       };
       setCart(newCart);
     } else {
@@ -171,8 +209,8 @@ const CatalogueClientMobile = () => {
   const modifierQuantite = (id, delta) => {
     const newCart = cart.map(item => {
       if (item.id === id) {
-        const nouvelleQuantite = item.quantite + delta;
-        if (nouvelleQuantite < 1) {
+        const nouvelleQuantite = parseFloat((item.quantite + delta).toFixed(2));
+        if (nouvelleQuantite < 0.1) {
           retirerDuPanier(id);
           return null;
         }
@@ -236,17 +274,18 @@ const CatalogueClientMobile = () => {
     setCommandeEnCours(true);
     
     try {
-      // Vérifier que le client est connecté
       const token = localStorage.getItem('token');
-      let clientId = localStorage.getItem('clientId');
-      const role = (localStorage.getItem('role') || '').toUpperCase();
-      
+      const role = getConnectedRole();
+      const clientId = getConnectedClientId();
+
       if (!token) {
         showNotification("Vous devez être connecté pour commander", "error");
         setCommandeEnCours(false);
         return;
       }
-      if (!clientId) {
+
+      // CLIENT_BAR : le backend identifie le client via le JWT (clientId dans le token)
+      if (!clientId && !isClientBarUser()) {
         setShowCreateClient(true);
         setCommandeEnCours(false);
         return;
@@ -256,20 +295,26 @@ const CatalogueClientMobile = () => {
       
       // Construction du payload pour la commande
       const payload = {
-        clientId: parseInt(clientId),
-        pointDeVenteId: pvId || 0,
-        typePaiement: "CREDIT", // ou "ESPECES" selon votre besoin
-        modeRetrait: modeRetrait,
-        lignes: cart.map(item => ({
-          produitId: item.id,
-          quantite: item.quantite,
-          prixUnitaire: item.prix
-        }))
+        items: cart.map(item => {
+          const cartItem = {
+            produitId: item.id,
+            quantite: item.quantite,
+            prixUnitaire: item.prix
+          };
+          // 🔥 N'envoyer la consigne que si elle est définie et non nulle
+          if (item.consigne != null && item.consigne !== 0) {
+            cartItem.consigne = item.consigne;
+          }
+          return cartItem;
+        }),
+        modeRetrait: modeRetrait, // 🔥 Envoyer le mode de retrait
+        creePar: getCreePar(),
       };
       
       // Choisir l'endpoint en fonction du rôle
+      // Backend endpoint: /api/commandes/client (pas /creer)
       const endpoint = role === 'CLIENT_BAR'
-        ? "/api/commandes/client/creer"
+        ? "/api/commandes/client"
         : "/api/commandes";
 
       const response = await privateApi.post(endpoint, payload, {
@@ -345,35 +390,16 @@ const CatalogueClientMobile = () => {
   };
 
   const PanierItem = ({ item }) => (
-    <Paper sx={{ display: "flex", alignItems: "center", p: 1, mb: 1 }}>
-      <Box flex={1}>
-        <Typography variant="body1" fontWeight="medium">
-          {item.nom}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {item.prix} F + {((item.consigneBouteille || 0) * (item.nbBouteillesParCasier || 0) + (item.consigneCasier || 0))} F (consigne)
-        </Typography>
-      </Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <IconButton 
-          size="small" 
-          onClick={() => modifierQuantite(item.id, -1)}
-          disabled={item.quantite <= 1}
-        >
-          <Minus size={16} />
-        </IconButton>
-        <Typography sx={{ minWidth: "24px", textAlign: "center" }}>
-          {item.quantite}
-        </Typography>
-        <IconButton 
-          size="small" 
-          onClick={() => modifierQuantite(item.id, 1)}
-        >
-          <Plus size={16} />
-        </IconButton>
-        <Typography sx={{ minWidth: "60px", textAlign: "right", fontWeight: "bold" }}>
-          {(item.prix + ((item.consigneBouteille || 0) * (item.nbBouteillesParCasier || 0) + (item.consigneCasier || 0))) * item.quantite} F
-        </Typography>
+    <Paper sx={{ display: "flex", alignItems: "center", p: 1, mb: 1, flexDirection: "column" }}>
+      <Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
+        <Box flex={1}>
+          <Typography variant="body1" fontWeight="medium">
+            {item.nom}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {item.prix} F + {((item.consigneBouteille || 0) * (item.nbBouteillesParCasier || 0) + (item.consigneCasier || 0))} F (consigne)
+          </Typography>
+        </Box>
         <IconButton 
           size="small" 
           color="error"
@@ -381,6 +407,43 @@ const CatalogueClientMobile = () => {
         >
           <Trash2 size={16} />
         </IconButton>
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+        <IconButton 
+          size="small" 
+          onClick={() => modifierQuantite(item.id, -0.5)}
+          disabled={item.quantite <= 0.5}
+        >
+          <Minus size={16} />
+        </IconButton>
+        <TextField
+          type="number"
+          size="small"
+          value={item.quantite}
+          onChange={(e) => {
+            const newQte = parseFloat(e.target.value) || 0;
+            if (newQte > 0) {
+              const newCart = cart.map(i => 
+                i.id === item.id ? { ...i, quantite: newQte } : i
+              );
+              setCart(newCart);
+            }
+          }}
+          inputProps={{ 
+            step: 0.5, 
+            min: 0.5, 
+            style: { textAlign: "center", width: "60px" } 
+          }}
+        />
+        <IconButton 
+          size="small" 
+          onClick={() => modifierQuantite(item.id, 0.5)}
+        >
+          <Plus size={16} />
+        </IconButton>
+        <Typography sx={{ minWidth: "60px", textAlign: "right", fontWeight: "bold" }}>
+          {(item.prix + ((item.consigneBouteille || 0) * (item.nbBouteillesParCasier || 0) + (item.consigneCasier || 0))) * item.quantite} F
+        </Typography>
       </Box>
     </Paper>
   );
@@ -546,6 +609,11 @@ const CatalogueClientMobile = () => {
                       <Typography variant="body2" color="text.secondary">
                         Prix: <strong>{b.prixVenteHt} F</strong>
                       </Typography>
+                      {b.stockInitial !== undefined && (
+                        <Typography variant="caption" color={b.stockInitial > 0 ? "success.main" : "error.main"} display="block">
+                          Stock: <strong>{b.stockInitial}</strong> {b.stockInitial > 0 ? "disponible(s)" : "ÉPUISÉ"}
+                        </Typography>
+                      )}
                       {(b.consigneBouteille || b.consigneCasier) && (
                         <Typography variant="caption" color="primary" display="block">
                           Consigne: {(b.consigneBouteille || 0) * (b.nbBouteillesParCasier || 0) + (b.consigneCasier || 0)} F
@@ -571,7 +639,8 @@ const CatalogueClientMobile = () => {
                           const val = e.target.value;
                           // Allow only empty string or digits
                           if (val === '' || /^\d+$/.test(val)) {
-                            setItemQuantities(prev => ({ ...prev, [b.id]: val === '' ? '' : parseInt(val) || 1 }));
+                            const maxStock = b.stockInitial || 999;
+                            setItemQuantities(prev => ({ ...prev, [b.id]: val === '' ? '' : Math.min(parseInt(val) || 1, maxStock) }));
                           }
                         }}
                         onBlur={(e) => {
@@ -579,15 +648,16 @@ const CatalogueClientMobile = () => {
                           if (val === '' || val === '0') {
                             setItemQuantities(prev => ({ ...prev, [b.id]: 1 }));
                           } else {
-                            const clamped = Math.max(1, parseInt(val) || 1);
+                            const maxStock = b.stockInitial || 999;
+                            const clamped = Math.min(Math.max(1, parseFloat(val) || 1), maxStock);
                             setItemQuantities(prev => ({ ...prev, [b.id]: clamped }));
                           }
                         }}
                         onFocus={(e) => e.target.select()}
                         size="small"
                         inputProps={{
-                          inputMode: "numeric",
-                          pattern: "[0-9]*",
+                          inputMode: "decimal",
+                          pattern: "[0-9]*\\.?[0-9]*",
                           style: { textAlign: "center" }
                         }}
                         sx={{
@@ -663,6 +733,27 @@ const CatalogueClientMobile = () => {
               </Box>
 
               <ResuméCommande />
+
+              {/* 🔥 Sélection du mode de retrait */}
+              <FormControl component="fieldset" sx={{ mt: 2 }}>
+                <FormLabel>Mode de récupération</FormLabel>
+                <RadioGroup
+                  row
+                  value={modeRetrait}
+                  onChange={(e) => setModeRetrait(e.target.value)}
+                >
+                  <FormControlLabel 
+                    value="LIVRAISON" 
+                    control={<Radio size="small" />} 
+                    label="🚚 Livraison" 
+                  />
+                  <FormControlLabel 
+                    value="RETRAIT" 
+                    control={<Radio size="small" />} 
+                    label="🏪 Retrait en magasin" 
+                  />
+                </RadioGroup>
+              </FormControl>
 
               <Button
                 fullWidth
